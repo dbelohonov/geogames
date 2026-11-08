@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""Build js/data.js from data/okresy.geojson.
+
+Reads the raw Czech okresy (districts) GeoJSON, simplifies each polygon
+with Ramer–Douglas–Peucker, projects lon/lat to a flat SVG coordinate
+system (equirectangular with a latitude correction so the aspect ratio is
+honest at ~50°N), computes an area-weighted label centroid per district,
+and emits a single self-contained `js/data.js`:
+
+    window.OKRESY = [ {code, name, kraj, path, cx, cy, area}, ... ];
+    window.OKRESY_VIEWBOX = "0 0 W H";
+
+No third-party dependencies — plain stdlib only.
+Run:  python3 -I scripts/build_data.py
+"""
+
+import json
+import math
+import os
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+SRC = ROOT / "data" / "okresy.geojson"
+OUT = ROOT / "js" / "data.js"
+
+# Simplification tolerance in *projected* pixel units. The map is drawn
+# ~960px wide, so ~1px is a good balance between file size and shape fidelity.
+RDP_TOL = 1.0
+# Scale degrees → pixels. lon range ~6.77°, ×cos(49.8°) ≈ 4.37 → ~960px wide.
+SCALE = 220.0
+
+
+def rdp(points, tol):
+    """Ramer–Douglas–Peucker on a list of [x, y]. Returns a simplified ring
+    (open: first point is kept, last point is kept, but the closing duplicate
+    is NOT re-appended here)."""
+    if len(points) < 3:
+        return points[:]
+
+    def perp_dist(p, a, b):
+        if a[0] == b[0] and a[1] == b[1]:
+            return math.hypot(p[0] - a[0], p[1] - a[1])
+        # signed distance from p to line(a,b)
+        num = abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1]))
+        den = math.hypot(b[0] - a[0], b[1] - a[1])
+        return num / den
+
+    keep = [False] * len(points)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(points) - 1)]
+    while stack:
+        a, b = stack.pop()
+        dmax, idx = 0.0, -1
+        for i in range(a + 1, b):
+            if keep[i]:
+                continue
+            d = perp_dist(points[i], points[a], points[b])
+            if d > dmax:
+                dmax, idx = d, i
+        if idx != -1 and dmax > tol:
+            keep[idx] = True
+            stack.append((a, idx))
+            stack.append((idx, b))
+    return [points[i] for i in range(len(points)) if keep[i]]
+
+
+def project(lon, lat, min_lon, max_lat, cos_lat0):
+    x = (lon - min_lon) * cos_lat0 * SCALE
+    y = (max_lat - lat) * SCALE
+    return [x, y]
+
+
+def ring_centroid(ring):
+    """Area-weighted centroid of a polygon ring (list of [x,y], closed)."""
+    n = len(ring)
+    if n < 3:
+        return (sum(p[0] for p in ring) / n, sum(p[1] for p in ring) / n)
+    a2 = 0.0
+    cx = cy = 0.0
+    for i in range(n):
+        x0, y0 = ring[i]
+        x1, y1 = ring[(i + 1) % n]
+        cross = x0 * y1 - x1 * y0
+        a2 += cross
+        cx += (x0 + x1) * cross
+        cy += (y0 + y1) * cross
+    area = a2 / 2.0
+    if abs(area) < 1e-6:
+        return (sum(p[0] for p in ring) / n, sum(p[1] for p in ring) / n)
+    return (cx / (6.0 * area), cy / (6.0 * area), abs(area))
+
+
+def fmt(v):
+    # one decimal is plenty at this scale → smaller file
+    return f"{v:.1f}"
+
+
+def main():
+    data = json.loads(SRC.read_text(encoding="utf-8"))
+    feats = data["features"]
+
+    # Overall bbox for projection reference.
+    xs, ys = [], []
+    for f in feats:
+        for ring in f["geometry"]["coordinates"]:
+            for lon, lat in ring:
+                xs.append(lon)
+                ys.append(lat)
+    min_lon, max_lon = min(xs), max(xs)
+    min_lat, max_lat = min(ys), max(ys)
+    lat0 = math.radians((min_lat + max_lat) / 2.0)
+    cos_lat0 = math.cos(lat0)
+
+    width = (max_lon - min_lon) * cos_lat0 * SCALE
+    height = (max_lat - min_lat) * SCALE
+    viewbox = f"0 0 {width:.1f} {height:.1f}"
+
+    out = []
+    for f in feats:
+        props = f["properties"]
+        name = props["r"]
+        kraj = props["k"]
+        code = props["i"]
+        ring = f["geometry"]["coordinates"][0]  # Polygon → exterior ring
+
+        pts = [project(lon, lat, min_lon, max_lat, cos_lat0) for lon, lat in ring]
+        # ring is closed (first == last); simplify the open interior, then close.
+        if pts[0] == pts[-1]:
+            open_ring = pts[:-1]
+        else:
+            open_ring = pts[:]
+        simp = rdp(open_ring, RDP_TOL)
+        simp.append(simp[0])  # close
+
+        c = ring_centroid(simp)
+        cx, cy, area = c
+
+        d = "M " + " L ".join(f"{fmt(x)} {fmt(y)}" for x, y in simp) + " Z"
+        out.append(
+            {
+                "code": code,
+                "name": name,
+                "kraj": kraj,
+                "path": d,
+                "cx": round(cx, 1),
+                "cy": round(cy, 1),
+                "area": round(area),
+            }
+        )
+
+    # Stable order: by code (LAU), which is roughly geographic.
+    out.sort(key=lambda o: o["code"])
+
+    js = []
+    js.append("// Auto-generated by scripts/build_data.py — do not edit by hand.")
+    js.append(f"// Source: data/okresy.geojson (77 okresy v ČR, EPSG:4326).")
+    js.append(f"window.OKRESY_VIEWBOX = {json.dumps(viewbox)};")
+    js.append("window.OKRESY = " + json.dumps(out, ensure_ascii=False) + ";")
+    OUT.write_text("\n".join(js) + "\n", encoding="utf-8")
+
+    total_pts = sum(o["path"].count(" L ") + 1 for o in out)
+    print(f"wrote {OUT} — {len(out)} okresy, ~{total_pts} path points, "
+          f"{OUT.stat().st_size} bytes; viewBox {viewbox}")
+
+
+if __name__ == "__main__":
+    main()

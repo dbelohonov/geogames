@@ -1,0 +1,261 @@
+/* Okresy v Česku — styles */
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --ink: #1f2933;
+  --muted: #6b7280;
+  --line: #d8dee4;
+  --accent: #11468f;      /* Czech blue */
+  --accent-soft: #e7eef9;
+  --good: #2e7d32;
+  --good-soft: #cdeacd;
+  --bad: #c62828;
+  --bad-soft: #f6d4d4;
+  --ask: #b8860b;
+  --ask-soft: #f5e6c0;
+  --district: #e9eef3;
+  --district-stroke: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1419;
+    --panel: #18222b;
+    --ink: #e6edf3;
+    --muted: #9aa7b2;
+    --line: #2b3942;
+    --accent: #6ea8ff;
+    --accent-soft: #1d2a3a;
+    --good: #66bb6a;
+    --good-soft: #2a4a2c;
+    --bad: #ef5350;
+    --bad-soft: #4a2a2a;
+    --ask: #ffca28;
+    --ask-soft: #3d3417;
+    --district: #28323b;
+    --district-stroke: #0f1419;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Top bar ---- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 700; }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.modes button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.modes button:hover { background: var(--accent-soft); }
+.modes button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ---- Layout ---- */
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 0;
+}
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* ---- Side panel ---- */
+.panel {
+  padding: 14px 16px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 760px) {
+  .panel { border-right: none; border-bottom: 1px solid var(--line); }
+}
+.prompt {
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 2.6em;
+}
+.prompt b { color: var(--accent); }
+.status {
+  color: var(--muted);
+  min-height: 2.4em;
+}
+
+.input-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.input-row input {
+  flex: 1 1 160px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.input-row input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.input-row button {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.input-row button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.input-row.good input { border-color: var(--good); background: var(--good-soft); }
+.input-row.bad input { border-color: var(--bad); background: var(--bad-soft); }
+.input-row.close input { border-color: var(--ask); background: var(--ask-soft); }
+
+.stats {
+  display: flex;
+  gap: 10px;
+}
+.stats > div {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.stats span { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.stats b { font-size: 18px; }
+
+.hint label, .legend .reveal {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); cursor: pointer;
+}
+.legend p { margin: 4px 0; font-size: 13px; }
+.sw {
+  display: inline-block; width: 12px; height: 12px;
+  border-radius: 3px; vertical-align: -1px; margin-right: 6px;
+}
+.sw.good { background: var(--good); }
+.sw.bad { background: var(--bad); }
+.sw.ask { background: var(--ask); }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions button {
+  flex: 1;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+}
+.actions button:hover { background: var(--accent); color: #fff; }
+
+.tooltip {
+  position: absolute;
+  z-index: 5;
+  background: var(--ink);
+  color: var(--panel);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---- Map ---- */
+.mapwrap {
+  padding: 10px;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#map { position: relative; width: 100%; }
+.cesko-map {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  display: block;
+}
+
+.district {
+  fill: var(--district);
+  stroke: var(--district-stroke);
+  stroke-width: 0.5;
+  cursor: pointer;
+  transition: fill .12s ease;
+}
+.district.hover { fill: var(--accent); }
+.district.good { fill: var(--good); }
+.district.bad { fill: var(--bad); }
+.district.ask { fill: var(--ask); }
+.district.info { fill: var(--accent); }
+
+.label {
+  fill: var(--ink);
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: middle;
+  opacity: 0;
+  transition: opacity .12s ease;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 2px;
+}
+.label.on { opacity: .95; }
+
+/* small parenthetical (kraj hint) inside the prompt */
+.prompt small { color: var(--muted); font-weight: 400; }
+
+.reveal-wrap { margin-top: 6px; }
+
+.refmap {
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  text-decoration: none;
+}
+.refmap:hover { text-decoration: underline; }
+
+/* ---- Footer ---- */
+.foot {
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--muted);
+}
+.foot a { color: var(--accent); }
+.foot code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
