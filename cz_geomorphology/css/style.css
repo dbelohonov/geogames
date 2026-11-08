@@ -199,7 +199,8 @@ body {
   border-radius: 6px;
   font-size: 13px;
   pointer-events: none;
-  white-space: nowrap;
+  max-width: 240px;          /* long names wrap to a second line … */
+  white-space: normal;       /* … instead of stretching the page */
 }
 
 /* ---- Map ---- */

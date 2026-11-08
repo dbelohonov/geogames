@@ -30,6 +30,13 @@ je jméno přejmenováno („Českoleská oblast“ → „Českoleská podsoust
 *pánve*, *nížiny*). Staré jméno je v psaném kvízu přijímáno jako platná
 odpověď, ale nikdy se nezobrazuje.
 
+Na úrovni soustav se slovo „soustava“ připisuje jen k jednoslovným
+přídavným jménům („Šumavská“ → „Šumavská soustava“); víceslovná jména,
+která už podstatné jméno nesou („Česká tabule“, „Vídeňská pánev“), se
+zobrazují bez něj — v psaném kvízu jsou přijaty obě podoby. Dlouhé názvy
+se v mapě sází na dvě řádky, aby popisek ani bublina nepřetekly svůj
+region či okno a neposouvaly mapu.
+
 **Jihomoravské Karpaty** (Mikulovská vrchovina, Pavlovské vrchy) kreslí atlas
 jako ostrůvek barvy Vnějších Západních Karpat mezi Vněkarpatskou sníženinou,
 Vídeňskou pánví a rakouskou hranicí — ve vektorové vrstvě je to samostatný

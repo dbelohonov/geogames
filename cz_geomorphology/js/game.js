@@ -4,7 +4,7 @@
 // Levels (modern terminology)
 //   • soustavy    — 10 geomorfologických soustav (default)
 //   • provincie   — 4 geomorfologické provincie
-//   • podsoustavy — 26 geomorfologických podsoustav
+//   • podsoustavy — 27 geomorfologických podsoustav
 //
 // Modes
 //   • explore — hover/click any unit to learn its name (+ parent unit or
@@ -101,6 +101,33 @@
     return level === "provincie" ? subsText(u.subs) : u.parent;
   }
 
+  // ---- Map labels --------------------------------------------------------
+  // Long names render on two lines so a label never sticks out of its region
+  // (or the map window). Limit is in characters; podsoustavy use a smaller
+  // font, so they tolerate slightly longer single lines.
+  var LABEL_WRAP_LEN = { prov: 18, soust: 18, pod: 20 };
+
+  // Split a name into two balanced lines: at the space nearest the middle,
+  // or after a hyphen for compound one-word names ("Krkonošsko-jesenická").
+  function splitTwo(name) {
+    var words = name.split(" ");
+    if (words.length >= 2) {
+      var half = name.length / 2, best = 1, bestDiff = Infinity;
+      for (var i = 1; i < words.length; i++) {
+        var diff = Math.abs(words.slice(0, i).join(" ").length - half);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      return [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+    }
+    var h = name.indexOf("-");
+    if (h > 0 && h < name.length - 1) return [name.slice(0, h + 1), name.slice(h + 1)];
+    return null;
+  }
+  function labelLines(name) {
+    if (name.length <= LABEL_WRAP_LEN[L().cls]) return [name];
+    return splitTwo(name) || [name];
+  }
+
   // ---- Map construction --------------------------------------------------
   function buildMap() {
     var svgNS = "http://www.w3.org/2000/svg";
@@ -137,10 +164,22 @@
       t.setAttribute("x", u.cx);
       t.setAttribute("y", u.cy);
       t.setAttribute("text-anchor", "middle");
-      t.setAttribute("dy", "0.3em");
       t.classList.add("label");
       t.setAttribute("data-code", u.code);
-      t.textContent = u.name;
+      var lines = labelLines(u.name);
+      if (lines.length === 1) {
+        t.setAttribute("dy", "0.3em");
+        t.textContent = lines[0];
+      } else {
+        // two tspans centred as a block on (cx, cy)
+        lines.forEach(function (ln, i) {
+          var ts = document.createElementNS(svgNS, "tspan");
+          ts.setAttribute("x", u.cx);
+          ts.setAttribute("dy", i ? "1.15em" : "-0.25em");
+          ts.textContent = ln;
+          t.appendChild(ts);
+        });
+      }
       lg.appendChild(t);
     });
 
@@ -169,14 +208,21 @@
   }
 
   // The tooltip lives inside .mapwrap (position:relative), so position it
-  // against that box, not against the page.
+  // against that box, not against the page. Flip it to the other side of
+  // the cursor near the edges so it never grows the scrollable area — an
+  // overflowing tooltip would shift the whole map.
   function moveTooltip(ev, text) {
     elTooltip.textContent = text;
     elTooltip.style.display = "block";
     var host = elTooltip.offsetParent || elMap;
     var r = host.getBoundingClientRect();
-    elTooltip.style.left = (ev.clientX - r.left + 12) + "px";
-    elTooltip.style.top = (ev.clientY - r.top + 12) + "px";
+    var x = ev.clientX - r.left + 12;
+    var y = ev.clientY - r.top + 12;
+    var w = elTooltip.offsetWidth, h = elTooltip.offsetHeight;
+    if (x + w > r.width - 4) x = ev.clientX - r.left - w - 12;
+    if (y + h > r.height - 4) y = ev.clientY - r.top - h - 12;
+    elTooltip.style.left = Math.max(4, x) + "px";
+    elTooltip.style.top = Math.max(4, y) + "px";
   }
   function hideTooltip() { elTooltip.style.display = "none"; }
 

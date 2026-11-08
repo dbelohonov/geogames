@@ -629,11 +629,16 @@ def main():
             cx, cy = label_point(polys, clamp=LABEL_CLAMP.get(sid))
             name = SOUSTAVY[sid]
             subs_here += 1
+            # Display form: only single-word adjectival names take the level
+            # word ("Šumavská" → "Šumavská soustava"); names that already
+            # carry a noun ("Česká tabule", "Vídeňská pánev") show unchanged.
+            # Both forms stay accepted when typed.
+            full = f"{name} soustava"
             soustavy.append({
                 "code": sid,
                 "name": name,
-                "alt": f"{name} soustava",
-                "accept": [name, f"{name} soustava"],
+                "alt": full if " " not in name else None,
+                "accept": [name, full],
                 "parent": PROVINCES[pid],
                 "path": d,
                 "cx": cx,
