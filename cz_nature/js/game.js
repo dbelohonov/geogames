@@ -2,20 +2,18 @@
 // specially protected areas (velkoplošná ZCHÚ) with the same modes as the
 // other games in this repo.
 //
-// Levels (categories)
-//   • np   — 4 národní parky
-//   • chko — 27 chráněných krajinných oblastí (default)
+// All 31 areas — 4 národní parky + 27 chráněných krajinných oblastí —
+// play together; there is no category switch. Names always carry the
+// category prefix ("NP Šumava", "CHKO Brdy"), which is also what tells
+// NP Šumava apart from the CHKO Šumava wrapped around it.
 //
-// The map always draws the country silhouette plus BOTH categories
-// (brown = NP, green = CHKO, NPs on top where they overlap). The level
-// decides which set the quizzes ask about; the other category fades to
-// the background and stops being clickable (see style.css).
+// The map draws the country silhouette plus both categories (brown = NP,
+// green = CHKO, NPs on top where they overlap).
 //
 // Modes
-//   • explore — hover/click any area (of either category) to learn its
-//               name and category.
-//   • click   — the game names areas of the current level one by one in
-//               random order; the player points to the right one.
+//   • explore — hover/click any area to learn its name and category.
+//   • click   — the game names areas one by one in random order; the
+//               player points to the right one.
 //   • type    — the game highlights areas one by one; the player types
 //               the name. Diacritics are optional and the category
 //               prefix may be abbreviated, spelled out or omitted
@@ -29,29 +27,12 @@
   var G = window.NATURE || { base: "", np: [], chko: [] };
   var VIEWBOX = window.NATURE_VIEWBOX || "0 0 517.213 295.669";
   var N = window.NatureNormalize;
-  var MAX_QUIZ = 10;
+  var QUIZ_LEN = 10;
 
   // tag every unit with its category so one flat list can drive the map
   (G.np || []).forEach(function (u) { u.kind = "np"; });
   (G.chko || []).forEach(function (u) { u.kind = "chko"; });
   var ALL = (G.np || []).concat(G.chko || []);
-
-  var LEVELS = {
-    np: {
-      units: G.np || [],
-      acc: "národní park",                  // "Klikni na …"
-      gen: "národního parku",               // "Napiš název …"
-      hl: "zvýrazněného národního parku",   // "Napiš název …" (type mode)
-      cls: "np",
-    },
-    chko: {
-      units: G.chko || [],
-      acc: "CHKO",
-      gen: "CHKO",
-      hl: "zvýrazněné CHKO",
-      cls: "chko",
-    },
-  };
 
   // ---- DOM refs ----------------------------------------------------------
   var elMap = document.getElementById("map");
@@ -66,22 +47,18 @@
   var elTooltip = document.getElementById("tooltip");
 
   // ---- State -------------------------------------------------------------
-  var level = "chko";            // np | chko
   var mode = "explore";          // explore | click | type
   var queue = [];                // array of unit codes to ask
   var qi = 0;                    // index into queue
   var score = 0;
   var target = null;             // current target unit object
   var locked = false;            // ignore input while showing feedback
-  var pathEls = {};              // code -> <path> (both categories)
-  var svgEl = null;              // the map <svg> (level/mode classes)
+  var pathEls = {};              // code -> <path>
 
-  function L() { return LEVELS[level]; }
-  function units() { return L().units; }
-  function quizLen() { return Math.min(MAX_QUIZ, units().length); }
+  function quizLen() { return Math.min(QUIZ_LEN, ALL.length); }
   function byCode(code) {
     var found = null;
-    units().forEach(function (u) { if (u.code === code) found = u; });
+    ALL.forEach(function (u) { if (u.code === code) found = u; });
     return found;
   }
 
@@ -121,21 +98,19 @@
     if (h > 0 && h < name.length - 1) return [name.slice(0, h + 1), name.slice(h + 1)];
     return null;
   }
-  function labelLines(name) {
-    if (name.length <= LABEL_WRAP_LEN[L().cls]) return [name];
+  function labelLines(name, kind) {
+    if (name.length <= LABEL_WRAP_LEN[kind]) return [name];
     return splitTwo(name) || [name];
   }
 
   // ---- Map construction --------------------------------------------------
-  // Both categories are drawn once; level/mode switches only toggle CSS
-  // classes on the <svg> root (no rebuild needed).
+  // All areas are drawn once; mode switches need no rebuild.
   function buildMap() {
     var svgNS = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("viewBox", VIEWBOX);
     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
     svg.classList.add("nature-map");
-    svg.classList.add("lvl-" + level);
 
     // country silhouette (decorative context, not clickable)
     var base = document.createElementNS(svgNS, "path");
@@ -176,7 +151,7 @@
       t.classList.add("label");
       t.classList.add(u.kind);
       t.setAttribute("data-code", u.code);
-      var lines = labelLines(displayName(u));
+      var lines = labelLines(displayName(u), u.kind);
       if (lines.length === 1) {
         t.setAttribute("dy", "0.3em");
         t.textContent = lines[0];
@@ -197,7 +172,6 @@
     svg.appendChild(lg);
     elMap.innerHTML = "";
     elMap.appendChild(svg);
-    svgEl = svg;
   }
 
   // ---- Hover (explore + click affordance) --------------------------------
@@ -248,7 +222,7 @@
     if (mode === "click" && !locked) {
       handleGuess(u);
     }
-    // type mode ignores map clicks; the faded category is pointer-events:none
+    // type mode ignores map clicks
   }
 
   function handleGuess(u) {
@@ -303,15 +277,6 @@
     elProgress.textContent = (qi) + " / " + quizLen();
   }
 
-  // level/mode classes on the <svg> drive which category is interactive
-  function syncMapClasses() {
-    if (!svgEl) return;
-    svgEl.classList.toggle("lvl-np", level === "np");
-    svgEl.classList.toggle("lvl-chko", level === "chko");
-    svgEl.classList.toggle("explore", mode === "explore");
-    svgEl.classList.toggle("quiz", mode !== "explore");
-  }
-
   // ---- Shuffling ---------------------------------------------------------
   function shuffle(arr) {
     var a = arr.slice();
@@ -323,7 +288,7 @@
   }
 
   function pickQueue() {
-    return shuffle(units()).slice(0, quizLen()).map(function (u) { return u.code; });
+    return shuffle(ALL).slice(0, quizLen()).map(function (u) { return u.code; });
   }
 
   // ---- Quiz flow ---------------------------------------------------------
@@ -336,24 +301,23 @@
     clearAllFlash();
     hideTooltip();
     showAllLabels(false);
-    syncMapClasses();
     elInputWrap.style.display = (mode === "type") ? "" : "none";
     elActions.style.display = "none";
     elRevealWrap.style.display = "none";
     if (mode === "type" && elInput) {
-      elInput.placeholder = "Napiš název " + L().gen + "…";
+      elInput.placeholder = "Napiš název území…";
       elInput.value = "";
       elInput.focus();
     }
     nextRound();
   }
 
-  // Click-mode prompt: category word + the short name ("Klikni na CHKO:
-  // Brdy") — the prefix would only repeat what the category word says.
+  // Click-mode prompt spells the full display name, prefix included
+  // ("CHKO Brdy", "NP Šumava") — for the two Šumavas the prefix is what
+  // tells them apart.
   function renderClickPrompt() {
     if (!target) return;
-    elPrompt.innerHTML = "Klikni na " + L().acc + ":<br><b>" +
-      target.name + "</b>";
+    elPrompt.innerHTML = "Klikni na:<br><b>" + displayName(target) + "</b>";
   }
 
   function nextRound() {
@@ -372,7 +336,7 @@
       if (elInput) elInput.blur();
     } else if (mode === "type") {
       flash(target.code, "ask");
-      elPrompt.innerHTML = "Napiš název " + L().hl + ":";
+      elPrompt.innerHTML = "Napiš název zvýrazněného území:";
       setStatus("");
       if (elInput) elInput.focus();
     }
@@ -436,8 +400,8 @@
     setTimeout(nextRound, 1300);
   }
 
-  // ---- localStorage best scores (per level + mode) ------------------------
-  function bestKey() { return "nature_best_" + level + "_" + mode; }
+  // ---- localStorage best scores (per mode) --------------------------------
+  function bestKey() { return "nature_best_" + mode; }
   function bestScore() {
     try { return parseInt(localStorage.getItem(bestKey()) || "0", 10) || 0; }
     catch (e) { return 0; }
@@ -452,10 +416,9 @@
     clearAllFlash();
     hideTooltip();
     target = null;
-    syncMapClasses();
     elPrompt.innerHTML = "Prozkoumávání";
     setStatus("Najedni myší na území a podívej se na jeho název a " +
-              "kategorii. V kvízech se ptáme jen na zvolenou kategorii.");
+              "kategorii. Kvízy se ptají na všech 31 území dohromady.");
     elInputWrap.style.display = "none";
     elActions.style.display = "none";
     elRevealWrap.style.display = "";
@@ -464,15 +427,6 @@
     showAllLabels(false);
     var reveal = document.getElementById("reveal-all");
     if (reveal) reveal.checked = false;
-  }
-
-  // ---- Level switching ---------------------------------------------------
-  function setLevel(newLevel) {
-    if (!LEVELS[newLevel] || newLevel === level) return;
-    level = newLevel;
-    syncMapClasses();
-    if (mode === "explore") enterExplore();
-    else startQuiz(mode); // restart the running quiz on the new level
   }
 
   // ---- Wiring ------------------------------------------------------------
@@ -485,16 +439,6 @@
         });
         if (m === "explore") enterExplore();
         else startQuiz(m);
-      });
-    });
-
-    document.querySelectorAll("[data-level]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var l = btn.getAttribute("data-level");
-        document.querySelectorAll("[data-level]").forEach(function (b) {
-          b.classList.toggle("active", b === btn);
-        });
-        setLevel(l);
       });
     });
 

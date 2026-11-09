@@ -2,25 +2,24 @@
 
 Učící hra na **velkoplošná zvláště chráněná území České republiky** —
 4 národní parky a 27 chráněných krajinných oblastí (stav 2025, včetně
-nejnovější CHKO Soutok). Interaktivní vektorová mapa se třemi režimy
-(stejně jako hry Okresy v Česku a Geomorfologie Česka) a dvěma kategoriemi:
-
-| Kategorie | Počet území | Délka kvízu |
-|---|---|---|
-| **Národní parky** | 4 (Šumava, Krkonoše, České Švýcarsko, Podyjí) | 4 otázky |
-| **CHKO** | 27 (Beskydy, Šumava, Jeseníky, Český ráj, Pálava, Soutok …) | 10 otázek |
+nejnovější CHKO Soutok). Všech 31 území vystupuje **dohromady** na jedné
+interaktivní vektorové mapě se třemi režimy (stejně jako hry Okresy
+v Česku a Geomorfologie Česka) — bez přepínače kategorií. Kvízy se ptají
+10 náhodných otázek napříč všemi územími a názvy území všude nesou
+zkratku své kategorie („NP Šumava“, „CHKO Brdy“).
 
 | Režim | Jak hraje |
 |---|---|
 | **Prozkoumat** | najedeš myší na území → zobrazí se název + kategorie; přepínačem „ukázat všechny názvy“ si mapu prohlédneš celou |
-| **Klikací kvíz** | hra vypíše název území zvolené kategorie, ty na něj **klikneš** v mapě |
+| **Klikací kvíz** | hra vypíše název území (včetně zkratky NP/CHKO), ty na něj **klikneš** v mapě |
 | **Psaný kvíz** | hra **zvýrazní území barvou**, ty **napíšeš** jeho název z klávesnice; **diakritika je volitelná** a předpona kategorie také („Brdy“, „CHKO Brdy“ i „chráněná krajinná oblast Brdy“ platí stejně; u Krkonoš prochází i „Krkonošský NP“ a „KRNAP“) |
 
-Mapa vždy kreslí obě kategorie (hnědě NP, zeleně CHKO — barvy zdrojové
-mapy) na podkresu siluety republiky; přepínač kategorie určuje, na kterou
-sadu se kvízy ptají. Druhá kategorie v kvízu zešedne a není klikací.
-V režimu Prozkoumat jsou živé obě. Skóre se počítá průběžně a nejlepší
-výsledek se ukládá do `localStorage` (zvlášť pro každou kategorii a režim).
+Mapa kreslí všechna území najednou (hnědě NP, zeleně CHKO — barvy zdrojové
+mapy) na podkresu siluety republiky. Národní parky se kreslí **nad** CHKO,
+které je obepínají, takže v překryvech zůstávají vidět i klikatelné celé.
+Kvízy se ptají na obě kategorie dohromady (10 náhodných otázek z 31
+území). Skóre se počítá průběžně a nejlepší výsledek se ukládá do
+`localStorage` (zvlášť pro každý režim).
 
 ## Spuštění
 
@@ -38,12 +37,12 @@ python3 -m http.server 8767
 
 ```
 cz_nature/
-├── index.html               # stránka hry (panel + mapa + přepínač kategorií)
+├── index.html               # stránka hry (panel + mapa)
 ├── css/style.css            # styly (světlý i tmavý režim)
 ├── js/
 │   ├── data.js              # GENEROVANÉ: SVG cesty + popisky 31 území
 │   ├── normalize.js         # porovnávání odpovědí bez ohledu na diakritiku
-│   └── game.js              # logika: kategorie, režimy, kvízy, skóre, feedback
+│   └── game.js              # logika: režimy, kvízy, skóre, feedback
 ├── data/CR_VZCHU_2025.svg   # zdrojová vektorová mapa (velkoplošná ZCHÚ, 2025)
 └── scripts/build_data.py    # generátor js/data.js ze SVG
 ```
@@ -104,8 +103,8 @@ python3 -I scripts/build_data.py
   CHKO, takže parky zůstávají vidět i klikatelné celé — stejně jako na
   oficiálních mapách.
 - NP Šumava a CHKO Šumava jsou dvě různá území (park je jádrová oblast,
-  CHKO ji obepíná); v kvízu je nikdy nepotkáš zároveň, protože kategorie
-  se ptají zvlášť.
+  CHKO ji obepíná) a v kvízu se mohou objevit obojí — zadání je proto
+  vždy odliší zkratkou kategorie („NP Šumava“ vs. „CHKO Šumava“).
 - Krkonoše se ve zdroji jmenují „Krkonošský NP“; hra jednotně zobrazuje
   „NP Krkonoše“, ale „Krkonošský NP“, „Krkonošský národní park“ i „KRNAP“
   v psaném kvízu přijímá.
