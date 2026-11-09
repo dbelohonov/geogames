@@ -1,0 +1,336 @@
+/* Vodstvo Česka — styles */
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --ink: #1f2933;
+  --muted: #6b7280;
+  --line: #d8dee4;
+  --accent: #11468f;      /* Czech blue */
+  --accent-soft: #e7eef9;
+  --good: #2e7d32;
+  --good-soft: #cdeacd;
+  --bad: #c62828;
+  --bad-soft: #f6d4d4;
+  --ask: #b8860b;
+  --ask-soft: #f5e6c0;
+  --region: #e9eef3;
+  --region-stroke: #ffffff;
+  /* water colours echo the source map: pale periwinkle rivers,
+     saturated blue reservoirs, softened so state colours stand out */
+  --river: #7c88e0;
+  --river-strong: #6b78d6;
+  --river-ctx: #cdd4f2;
+  --res: #7d95e6;
+  --res-strong: #2743d0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1419;
+    --panel: #18222b;
+    --ink: #e6edf3;
+    --muted: #9aa7b2;
+    --line: #2b3942;
+    --accent: #6ea8ff;
+    --accent-soft: #1d2a3a;
+    --good: #66bb6a;
+    --good-soft: #2a4a2c;
+    --bad: #ef5350;
+    --bad-soft: #4a2a2a;
+    --ask: #ffca28;
+    --ask-soft: #3d3417;
+    --region: #28323b;
+    --region-stroke: #0f1419;
+    --river: #6b78d6;
+    --river-strong: #8b96e8;
+    --river-ctx: #333a66;
+    --res: #3a4a86;
+    --res-strong: #7d95e6;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Top bar ---- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 700; }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.modes button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.modes button:hover { background: var(--accent-soft); }
+.modes button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ---- Layout ---- */
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  /* pin the row to the space between topbar and footer, so a wide map
+     can't grow it past the viewport (minmax(0,…) drops the content-based
+     minimum); the SVG then letterboxes inside via preserveAspectRatio */
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+}
+@media (max-width: 760px) {
+  /* stacked layout: rows size to content again */
+  .layout { grid-template-columns: 1fr; grid-template-rows: none; }
+}
+
+/* ---- Side panel ---- */
+.panel {
+  padding: 14px 16px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 760px) {
+  .panel { border-right: none; border-bottom: 1px solid var(--line); }
+}
+.prompt {
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 2.6em;
+}
+.prompt b { color: var(--accent); }
+.status {
+  color: var(--muted);
+  min-height: 2.4em;
+}
+
+.input-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.input-row input {
+  flex: 1 1 160px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.input-row input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.input-row button {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.input-row button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.input-row.good input { border-color: var(--good); background: var(--good-soft); }
+.input-row.bad input { border-color: var(--bad); background: var(--bad-soft); }
+.input-row.close input { border-color: var(--ask); background: var(--ask-soft); }
+
+.stats {
+  display: flex;
+  gap: 10px;
+}
+.stats > div {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.stats span { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.stats b { font-size: 18px; }
+
+.legend .reveal {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); cursor: pointer;
+}
+.legend p { margin: 4px 0; font-size: 13px; }
+.sw {
+  display: inline-block; width: 12px; height: 12px;
+  border-radius: 3px; vertical-align: -1px; margin-right: 6px;
+}
+.sw.river {
+  background: none;
+  border-radius: 0;
+  height: 3px;
+  vertical-align: 3px;
+  background: var(--river-strong);
+}
+.sw.res { background: var(--res-strong); }
+.sw.good { background: var(--good); }
+.sw.bad { background: var(--bad); }
+.sw.ask { background: var(--ask); }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions button {
+  flex: 1;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+}
+.actions button:hover { background: var(--accent); color: #fff; }
+
+.tooltip {
+  position: absolute;
+  z-index: 5;
+  background: var(--ink);
+  color: var(--panel);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  pointer-events: none;
+  max-width: 240px;          /* long names wrap to a second line … */
+  white-space: normal;       /* … instead of stretching the page */
+}
+
+/* ---- Map ---- */
+.mapwrap {
+  padding: 10px;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* #map fills the padded area and the SVG letterboxes its drawing inside
+   that box (preserveAspectRatio), so on wide screens the map shrinks to
+   fit the available height instead of overflowing onto the page borders. */
+#map { position: relative; width: 100%; height: 100%; }
+.water-map {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* country silhouette — context only, not interactive */
+.water-map .base {
+  fill: var(--region);
+  stroke: var(--region-stroke);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* the rest of the river network: faint backdrop, not interactive */
+.water-map .river-ctx {
+  fill: none;
+  stroke: var(--river-ctx);
+  stroke-width: .5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* rivers: thin stroked lines; the clickable area is a fat invisible twin
+   (.river-hit) so a 1-px line stays an easy target */
+.water-map .region.river {
+  fill: none;
+  stroke: var(--river);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke .12s ease;
+}
+.water-map .river-hit {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: 0;
+  stroke-width: 7;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* reservoirs: filled blobs traced from the source raster */
+.water-map .region.res {
+  fill: var(--res);
+  stroke: var(--region-stroke);
+  stroke-width: .4;
+  stroke-linejoin: round;
+  cursor: pointer;
+  transition: fill .12s ease;
+}
+
+/* state colours — rivers recolour their stroke, reservoirs their fill */
+.water-map .region.res.hover { fill: var(--accent); }
+.water-map .region.res.good { fill: var(--good); }
+.water-map .region.res.bad { fill: var(--bad); }
+.water-map .region.res.ask { fill: var(--ask); }
+.water-map .region.res.info { fill: var(--accent); }
+.water-map .region.river.hover { stroke: var(--accent); stroke-width: 2.4; }
+.water-map .region.river.good { stroke: var(--good); stroke-width: 2.4; }
+.water-map .region.river.bad { stroke: var(--bad); stroke-width: 2.4; }
+.water-map .region.river.ask { stroke: var(--ask); stroke-width: 2.4; }
+.water-map .region.river.info { stroke: var(--accent); stroke-width: 2.4; }
+
+.water-map .label {
+  fill: var(--ink);
+  font-size: 5.5px;          /* viewBox units — ~10px on screen */
+  font-weight: 600;
+  text-anchor: middle;
+  opacity: 0;
+  transition: opacity .12s ease;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 1.2px;
+}
+.water-map .label.on { opacity: .95; }
+/* river names sit beside long lines — slightly larger type */
+.water-map .label.river { font-size: 6.5px; stroke-width: 1.4px; }
+
+.reveal-wrap { margin-top: 6px; }
+
+.refmap {
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  text-decoration: none;
+}
+.refmap:hover { text-decoration: underline; }
+
+/* ---- Footer ---- */
+.foot {
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--muted);
+}
+.foot a { color: var(--accent); }
+.foot code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
