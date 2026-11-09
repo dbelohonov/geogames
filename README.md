@@ -11,6 +11,7 @@
 |---|---|---|
 | [`game_cesko/`](game_cesko/) | Okresy v Česku | районы (okresy) Чехии — 77 штук: интерактивная векторная карта, режим изучения, кликабельный квиз и квиз с вводом названия (диакритика опциональна) |
 | [`cz_geomorphology/`](cz_geomorphology/) | Geomorfologie Česka | геоморфологическое деление Чехии — 4 провинции, 10 soustav и 27 podsoustav (современная терминология: soustava/podsoustava вместо старых subprovincie/oblast из атласа): те же три режима плюс переключатель уровня деления |
+| [`cz_nature/`](cz_nature/) | Chráněná území Česka | крупноплошные особо охраняемые территории Чехии — 4 национальных парка и 27 охраняемых ландшафтных областей (CHKO), состояние 2025 г., включая новейший CHKO Soutok: те же три режима плюс переключатель категории (NP/CHKO) |
 
 ## Как запустить
 
@@ -22,6 +23,7 @@
 python3 -m http.server 8765
 # → http://localhost:8765/game_cesko/
 # → http://localhost:8765/cz_geomorphology/
+# → http://localhost:8765/cz_nature/
 ```
 
 ## Устройство игр

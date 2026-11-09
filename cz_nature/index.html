@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chráněná území Česka · učící hra</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>🌿 Chráněná území Česka</h1>
+      <nav class="modes">
+        <button data-mode="explore" class="active">Prozkoumat</button>
+        <button data-mode="click">Klikací kvíz</button>
+        <button data-mode="type">Psaný kvíz</button>
+      </nav>
+      <nav class="levels" title="Kategorie velkoplošných chráněných území">
+        <button data-level="np">Národní parky</button>
+        <button data-level="chko" class="active">CHKO</button>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <aside class="panel" id="panel">
+        <div class="prompt" id="prompt">Prozkoumávání</div>
+        <div class="status" id="status">Najedni myší na území a podívej se na jeho název a kategorii.</div>
+
+        <div class="input-row" id="input-wrap" style="display:none">
+          <input id="answer-input" type="text" autocomplete="off"
+                 autocapitalize="off" spellcheck="false"
+                 placeholder="Napiš název CHKO…">
+          <button id="btn-submit" type="button">OK</button>
+          <button id="btn-skip" type="button" class="ghost">Přeskočit</button>
+        </div>
+
+        <div class="stats">
+          <div><span>Otázka</span><b id="progress">—</b></div>
+          <div><span>Skóre</span><b id="score">—</b></div>
+        </div>
+
+        <div class="legend" id="legend">
+          <p><span class="sw np"></span> národní park</p>
+          <p><span class="sw chko"></span> chráněná krajinná oblast</p>
+          <p><span class="sw good"></span> správně / hledané území</p>
+          <p><span class="sw bad"></span> nesprávně</p>
+          <p><span class="sw ask"></span> zvýrazněné území (psaný kvíz)</p>
+          <div class="reveal-wrap" id="reveal-wrap">
+            <label class="reveal"><input type="checkbox" id="reveal-all"> ukázat všechny názvy</label>
+          </div>
+        </div>
+
+        <div class="actions" id="actions" style="display:none">
+          <button data-restart="click">Hrát znovu (klikací)</button>
+          <button data-restart="type">Hrát znovu (psaný)</button>
+        </div>
+
+        <a class="refmap" href="../images/CR_VZCHU_2025.svg" target="_blank" rel="noopener">📷 Referenční mapa s&nbsp;názvy (VZCHÚ 2025)</a>
+      </aside>
+
+      <section class="mapwrap">
+        <div id="map"></div>
+        <div class="tooltip" id="tooltip" style="display:none"></div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>Zdroj mapy: <code>data/CR_VZCHU_2025.svg</code> — velkoplošná zvláště chráněná území ČR, stav 2025
+         · 4 národní parky a 27 CHKO (včetně Soutoku). Data generována přes <code>scripts/build_data.py</code>.</p>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/normalize.js"></script>
+    <script src="js/game.js"></script>
+  </body>
+</html>
