@@ -16,12 +16,12 @@ a nejlepší výsledek se ukládá do `localStorage`.
 
 Hra je čistě statická (HTML + CSS + vanilla JS), žádný build ani server není
 nutný — stačí otevřít `index.html` v prohlížeči. Pokud chceš servírovat
-přes HTTP (např. kvůli iframe v katalogu):
+přes HTTP (např. kvůli iframe v katalogu), spusť server z kořene repozitáře —
+jinak hra nedosáhne na sdílenou složku `../images/` s referenční mapou:
 
 ```bash
-cd game_cesko
 python3 -m http.server 8765
-# → http://localhost:8765
+# → http://localhost:8765/game_cesko/
 ```
 
 ## Struktura
@@ -35,9 +35,12 @@ game_cesko/
 │   ├── normalize.js      # porovnávání odpovědí bez ohledu na diakritiku
 │   └── game.js           # logika: režimy, kvízy, skóre, feedback
 ├── data/okresy.geojson   # zdrojová hranice okresů (EPSG:4326)
-├── images/Okresy_CR.png  # referenční mapa s názvy (Wikipedia) — odkaz v panelu
 └── scripts/build_data.py # generátor js/data.js z geojsonu
 ```
+
+Referenční mapa s názvy (Wikipedia) leží mimo složku hry, ve sdílené
+`../images/Okresy_CR.png` (v kořeni repozitáře, neverzionováno —
+viz `.gitignore`); odkaz v panelu míří tam.
 
 ## Odkud jsou data
 

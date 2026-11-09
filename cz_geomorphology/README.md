@@ -52,12 +52,12 @@ sníženiny), a hra se drží atlasu.
 
 Hra je čistě statická (HTML + CSS + vanilla JS), žádný build ani server není
 nutný — stačí otevřít `index.html` v prohlížeči. Pokud chceš servírovat
-přes HTTP (např. kvůli iframe v katalogu):
+přes HTTP (např. kvůli iframe v katalogu), spusť server z kořene repozitáře —
+jinak hra nedosáhne na sdílenou složku `../images/` s referenční mapou:
 
 ```bash
-cd cz_geomorphology
 python3 -m http.server 8766
-# → http://localhost:8766
+# → http://localhost:8766/cz_geomorphology/
 ```
 
 ## Struktura
@@ -71,9 +71,12 @@ cz_geomorphology/
 │   ├── normalize.js         # porovnávání odpovědí bez ohledu na diakritiku
 │   └── game.js              # logika: úrovně, režimy, kvízy, skóre, feedback
 ├── data/geomorfologie.svg   # zdrojová vektorová mapa (atlas MU)
-├── images/Geomorfologie_CR.jpg # referenční mapa s názvy (atlas MU) — odkaz v panelu
 └── scripts/build_data.py    # generátor js/data.js ze SVG
 ```
+
+Referenční mapa s názvy (atlas MU) leží mimo složku hry, ve sdílené
+`../images/Geomorfologie_CR.jpg` (v kořeni repozitáře, neverzionováno —
+viz `.gitignore`); odkaz v panelu míří tam.
 
 ## Odkud jsou data
 
