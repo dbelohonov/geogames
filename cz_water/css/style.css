@@ -16,12 +16,10 @@
   --region: #e9eef3;
   --region-stroke: #ffffff;
   /* water colours echo the source map: pale periwinkle rivers,
-     saturated blue reservoirs, softened so state colours stand out */
+     softened so state colours stand out */
   --river: #7c88e0;
   --river-strong: #6b78d6;
   --river-ctx: #cdd4f2;
-  --res: #7d95e6;
-  --res-strong: #2743d0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,8 +42,6 @@
     --river: #6b78d6;
     --river-strong: #8b96e8;
     --river-ctx: #333a66;
-    --res: #3a4a86;
-    --res-strong: #7d95e6;
   }
 }
 
@@ -186,7 +182,6 @@ body {
   vertical-align: 3px;
   background: var(--river-strong);
 }
-.sw.res { background: var(--res-strong); }
 .sw.good { background: var(--good); }
 .sw.bad { background: var(--bad); }
 .sw.ask { background: var(--ask); }
@@ -275,22 +270,7 @@ body {
   cursor: pointer;
 }
 
-/* reservoirs: filled blobs traced from the source raster */
-.water-map .region.res {
-  fill: var(--res);
-  stroke: var(--region-stroke);
-  stroke-width: .4;
-  stroke-linejoin: round;
-  cursor: pointer;
-  transition: fill .12s ease;
-}
-
-/* state colours — rivers recolour their stroke, reservoirs their fill */
-.water-map .region.res.hover { fill: var(--accent); }
-.water-map .region.res.good { fill: var(--good); }
-.water-map .region.res.bad { fill: var(--bad); }
-.water-map .region.res.ask { fill: var(--ask); }
-.water-map .region.res.info { fill: var(--accent); }
+/* state colours — rivers recolour their stroke */
 .water-map .region.river.hover { stroke: var(--accent); stroke-width: 2.4; }
 .water-map .region.river.good { stroke: var(--good); stroke-width: 2.4; }
 .water-map .region.river.bad { stroke: var(--bad); stroke-width: 2.4; }
@@ -314,15 +294,6 @@ body {
 .water-map .label.river { font-size: 6.5px; stroke-width: 1.4px; }
 
 .reveal-wrap { margin-top: 6px; }
-
-.refmap {
-  margin-top: auto;
-  padding-top: 8px;
-  color: var(--accent);
-  font-size: 13px;
-  text-decoration: none;
-}
-.refmap:hover { text-decoration: underline; }
 
 /* ---- Footer ---- */
 .foot {

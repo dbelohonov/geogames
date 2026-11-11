@@ -21,12 +21,16 @@
 //               all count — see normalize.js).
 //
 // Data comes from js/data.js (window.NATURE, window.NATURE_VIEWBOX).
+// Text comes from the language layer (../i18n/core.js + ../i18n/common.js +
+// js/i18n.js): the hub page picks the language and passes it as ?lang=…, and
+// area names (NP/CHKO prefixes included) stay Czech in every language.
 (function () {
   "use strict";
 
   var G = window.NATURE || { base: "", np: [], chko: [] };
   var VIEWBOX = window.NATURE_VIEWBOX || "0 0 517.213 295.669";
   var N = window.NatureNormalize;
+  var tr = window.GeoI18N.t;
   var QUIZ_LEN = 10;
 
   // tag every unit with its category so one flat list can drive the map
@@ -71,7 +75,10 @@
   }
   // Secondary info shown in tooltips/status after " · " — the category
   // spelled out, which also teaches what the CHKO/NP abbreviations mean.
-  function infoLine(u) { return u.cat; }
+  // Category words live in the data, so they are translated by key with the
+  // Czech original as the fallback. No "cat.*" key is defined while Czech is
+  // the only language — the lookup is the seam where a translation would go.
+  function infoLine(u) { return tr("cat." + u.cat, null, u.cat); }
 
   // ---- Map labels --------------------------------------------------------
   // Long names render on two lines so a label never sticks out of its
@@ -231,12 +238,13 @@
     if (u.code === target.code) {
       score++;
       flash(target.code, "good");
-      setStatus("Správně! " + displayName(target));
+      setStatus(tr("app.status.correct", { name: displayName(target) }));
     } else {
       flash(u.code, "bad");
       flash(target.code, "good");
-      setStatus("Nesprávně. Hledali jsme: " + displayName(target) +
-                " · " + infoLine(target));
+      setStatus(tr("app.status.wrongClick", {
+        name: displayName(target), info: " · " + infoLine(target),
+      }));
     }
     updateScore();
     setTimeout(nextRound, 1100);
@@ -305,7 +313,7 @@
     elActions.style.display = "none";
     elRevealWrap.style.display = "none";
     if (mode === "type" && elInput) {
-      elInput.placeholder = "Napiš název území…";
+      elInput.placeholder = tr("app.input.placeholder");
       elInput.value = "";
       elInput.focus();
     }
@@ -317,7 +325,8 @@
   // tells them apart.
   function renderClickPrompt() {
     if (!target) return;
-    elPrompt.innerHTML = "Klikni na:<br><b>" + displayName(target) + "</b>";
+    elPrompt.innerHTML = tr("app.prompt.click") +
+                         "<br><b>" + displayName(target) + "</b>";
   }
 
   function nextRound() {
@@ -336,7 +345,7 @@
       if (elInput) elInput.blur();
     } else if (mode === "type") {
       flash(target.code, "ask");
-      elPrompt.innerHTML = "Napiš název zvýrazněného území:";
+      elPrompt.innerHTML = tr("app.prompt.type");
       setStatus("");
       if (elInput) elInput.focus();
     }
@@ -352,11 +361,13 @@
     var isBest = score > best;
     if (isBest) saveBest(score);
     var bestNow = Math.max(best, score);
-    elPrompt.innerHTML =
-      "Konec kvízu!<br><b>" + score + " / " + len +
-      "</b> (" + pct + " %)";
-    setStatus("Nejlepší výsledek: " + bestNow + " / " + len +
-              (isBest ? " — nový rekord!" : ""));
+    elPrompt.innerHTML = tr("app.prompt.finish",
+                            { score: score, len: len, pct: pct });
+    setStatus(tr("app.status.best", {
+      score: bestNow,
+      len: len,
+      record: isBest ? tr("app.status.record") : "",
+    }));
     elInputWrap.style.display = "none";
     elActions.style.display = "";
     elProgress.textContent = len + " / " + len;
@@ -373,17 +384,19 @@
       score++;
       flash(target.code, "good");
       elInputWrap.classList.add("good");
-      setStatus("Správně! " + displayName(target));
+      setStatus(tr("app.status.correct", { name: displayName(target) }));
     } else if (N.isClose(typed, names)) {
       flash(target.code, "bad");
       elInputWrap.classList.add("close");
-      setStatus("Téměř. Správně: " + displayName(target) +
-                " · " + infoLine(target));
+      setStatus(tr("app.status.almost", {
+        name: displayName(target), info: " · " + infoLine(target),
+      }));
     } else {
       flash(target.code, "bad");
       elInputWrap.classList.add("bad");
-      setStatus("Nesprávně. Správně: " + displayName(target) +
-                " · " + infoLine(target));
+      setStatus(tr("app.status.wrongType", {
+        name: displayName(target), info: " · " + infoLine(target),
+      }));
     }
     updateScore();
     setTimeout(nextRound, 1300);
@@ -394,8 +407,9 @@
     locked = true;
     flash(target.code, "bad");
     elInputWrap.classList.add("bad");
-    setStatus("Správně bylo: " + displayName(target) +
-              " · " + infoLine(target));
+    setStatus(tr("app.status.skipped", {
+      name: displayName(target), info: " · " + infoLine(target),
+    }));
     updateScore();
     setTimeout(nextRound, 1300);
   }
@@ -416,9 +430,8 @@
     clearAllFlash();
     hideTooltip();
     target = null;
-    elPrompt.innerHTML = "Prozkoumávání";
-    setStatus("Najedni myší na území a podívej se na jeho název a " +
-              "kategorii. Kvízy se ptají na všech 31 území dohromady.");
+    elPrompt.innerHTML = tr("app.prompt.explore");
+    setStatus(tr("app.status.explore"));
     elInputWrap.style.display = "none";
     elActions.style.display = "none";
     elRevealWrap.style.display = "";

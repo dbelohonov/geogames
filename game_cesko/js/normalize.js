@@ -20,8 +20,7 @@
       .normalize("NFD")
       .replace(/[̀-ͯ]/g, "");
     // Lowercase, drop everything that isn't a–z or 0–9 (hyphens, spaces,
-    // punctuation, the German ß, etc.). This makes "Brno-město" and
-    // "brno mesto" identical.
+    // punctuation, etc.). This makes "Brno-město" and "brno mesto" identical.
     return deaccented
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");

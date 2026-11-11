@@ -1,34 +1,28 @@
-// game.js — Vodstvo Česka: clickable map of the ten asked rivers and all
-// visualized water reservoirs, with the same modes as the other games in
-// this repo.
+// game.js — Vodstvo Česka: clickable map of the 24 asked rivers, with the
+// same modes as the other games in this repo.
 //
-// Rivers and reservoirs play together in one pool (no category switch);
-// names always carry the category ("řeka Vltava", "VN Lipno"). Rivers are
-// drawn as stroked polylines with an invisible fat twin path that catches
-// clicks; reservoirs are filled polygons traced from the source raster.
+// Names always carry the category ("řeka Vltava"). Rivers are drawn as
+// stroked polylines with an invisible fat twin path that catches clicks.
 //
 // Modes
-//   • explore — hover/click any river or reservoir to learn its name.
-//   • click   — the game names units one by one in random order; the
+//   • explore — hover/click any river to learn its name.
+//   • click   — the game names rivers one by one in random order; the
 //               player points to the right one.
-//   • type    — the game highlights units one by one; the player types
+//   • type    — the game highlights rivers one by one; the player types
 //               the name. Diacritics are optional and the category word
-//               may be spelled out or omitted ("Lipno", "VN Lipno",
-//               "vodní nádrž Lipno" all count — see normalize.js).
+//               may be spelled out or omitted ("Vltava" and "řeka Vltava"
+//               both count — see normalize.js).
 //
 // Data comes from js/data.js (window.WATER, window.WATER_VIEWBOX).
 (function () {
   "use strict";
 
-  var G = window.WATER || { base: "", river: [], res: [] };
+  var G = window.WATER || { base: "", river: [] };
   var VIEWBOX = window.WATER_VIEWBOX || "0 0 517.2 310.0";
   var N = window.WaterNormalize;
   var QUIZ_LEN = 10;
 
-  // tag every unit with its kind so one flat list can drive the map
-  (G.river || []).forEach(function (u) { u.kind = "river"; });
-  (G.res || []).forEach(function (u) { u.kind = "res"; });
-  var ALL = (G.river || []).concat(G.res || []);
+  var ALL = G.river || [];
 
   // ---- DOM refs ----------------------------------------------------------
   var elMap = document.getElementById("map");
@@ -49,7 +43,7 @@
   var score = 0;
   var target = null;             // current target unit object
   var locked = false;            // ignore input while showing feedback
-  var pathEls = {};              // code -> visible <path> (river or res)
+  var pathEls = {};              // code -> visible river <path>
 
   function quizLen() { return Math.min(QUIZ_LEN, ALL.length); }
   function byCode(code) {
@@ -58,7 +52,7 @@
     return found;
   }
 
-  // Full display name with the category: "řeka Vltava" / "VN Lipno".
+  // Full display name with the category: "řeka Vltava".
   function displayName(u) { return u.alt || u.name; }
   // Accepted typed answers (prefix / short / spelled-out forms).
   function acceptedNames(u) {
@@ -70,15 +64,15 @@
 
   // ---- Map labels --------------------------------------------------------
   // Long names render on two lines so a label never sticks out of its
-  // region (or the map window); limits are in viewBox units.
-  var LABEL_WRAP_LEN = { river: 14, res: 13 };
+  // region (or the map window); the limit is in viewBox units.
+  var LABEL_WRAP_LEN = 14;
 
   // Split a name into two balanced lines: at the space nearest the middle,
   // or after a hyphen for compound one-word names. An en dash between
   // words ("Kokořínsko – Máchův kraj") is glued to the preceding word so
   // a line never starts with a lone dash.
   function splitTwo(name) {
-    var words = name.replace(/ \u2013 /g, " \u00a0\u2013 ").split(" ");
+    var words = name.replace(/ – /g, " \xa0– ").split(" ");
     if (words.length >= 2) {
       var half = name.length / 2, best = 1, bestDiff = Infinity;
       for (var i = 1; i < words.length; i++) {
@@ -91,8 +85,8 @@
     if (h > 0 && h < name.length - 1) return [name.slice(0, h + 1), name.slice(h + 1)];
     return null;
   }
-  function labelLines(name, kind) {
-    if (name.length <= LABEL_WRAP_LEN[kind]) return [name];
+  function labelLines(name) {
+    if (name.length <= LABEL_WRAP_LEN) return [name];
     return splitTwo(name) || [name];
   }
 
@@ -118,15 +112,15 @@
       svg.appendChild(ctx);
     }
 
-    var gVis = document.createElementNS(svgNS, "g");   // rivers + reservoirs
+    var gVis = document.createElementNS(svgNS, "g");   // visible rivers
     var gHit = document.createElementNS(svgNS, "g");   // fat river hit paths
     var lg = document.createElementNS(svgNS, "g");     // labels (hidden)
     lg.setAttribute("pointer-events", "none");
 
     pathEls = {};
 
-    // rivers first: thin visible stroke …
-    ALL.filter(function (u) { return u.kind === "river"; }).forEach(function (u) {
+    // rivers: thin visible stroke …
+    ALL.forEach(function (u) {
       var p = document.createElementNS(svgNS, "path");
       p.setAttribute("d", u.path);
       p.setAttribute("data-code", u.code);
@@ -134,21 +128,9 @@
       gVis.appendChild(p);
       pathEls[u.code] = p;
     });
-    // … reservoirs on top of them …
-    ALL.filter(function (u) { return u.kind === "res"; }).forEach(function (u) {
-      var p = document.createElementNS(svgNS, "path");
-      p.setAttribute("d", u.path);
-      p.setAttribute("data-code", u.code);
-      p.classList.add("region", "res");
-      p.addEventListener("click", onRegionClick.bind(null, u));
-      p.addEventListener("mouseenter", onRegionHover.bind(null, u));
-      p.addEventListener("mouseleave", onRegionLeave.bind(null, u));
-      gVis.appendChild(p);
-      pathEls[u.code] = p;
-    });
-    // … and the invisible click catchers for rivers above everything, so a
-    // reservoir sitting on a river line still wins its own clicks
-    ALL.filter(function (u) { return u.kind === "river"; }).forEach(function (u) {
+    // … and the invisible click catchers above everything, so even a thin
+    // stream stays an easy target
+    ALL.forEach(function (u) {
       var hit = document.createElementNS(svgNS, "path");
       hit.setAttribute("d", u.path);
       hit.setAttribute("data-code", u.code);
@@ -165,9 +147,9 @@
       t.setAttribute("y", u.cy);
       t.setAttribute("text-anchor", "middle");
       t.classList.add("label");
-      t.classList.add(u.kind);
+      t.classList.add("river");
       t.setAttribute("data-code", u.code);
-      var lines = labelLines(displayName(u), u.kind);
+      var lines = labelLines(displayName(u));
       if (lines.length === 1) {
         t.setAttribute("dy", "0.3em");
         t.textContent = lines[0];
@@ -329,7 +311,7 @@
   }
 
   // Click-mode prompt spells the full display name, category included
-  // ("řeka Vltava", "VN Orlík").
+  // ("řeka Vltava").
   function renderClickPrompt() {
     if (!target) return;
     elPrompt.innerHTML = "Klikni na:<br><b>" + displayName(target) + "</b>";
@@ -432,8 +414,8 @@
     hideTooltip();
     target = null;
     elPrompt.innerHTML = "Prozkoumávání";
-    setStatus("Najedni myší na řeku nebo nádrž a podívej se na její " +
-              "název. Kvízy se ptají na všech 34 území dohromady.");
+    setStatus("Najedni myší na řeku a podívej se na její název. " +
+              "Kvízy se ptají na všech 24 řek dohromady.");
     elInputWrap.style.display = "none";
     elActions.style.display = "none";
     elRevealWrap.style.display = "";

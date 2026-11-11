@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Generátor js/data.js z vektorové mapy vodstva ČR.
+"""Generátor js/data.js — silueta z atlasu, řeky z OpenStreetMap.
 
 Zdroje:
 - data/07-vodstvo.svg — vektorová mapa z Tematického atlasu České republiky
-  (Masarykova univerzita, PedF, J. Svobodova; is.muni.cz), vrstvy: silueta
-  státu, říční síť (modré tahy), vodní plochy (modré výplně) a popisky.
-  Z ní pochází veškerá geometrie řek a silueta — přesné vektory, žádná
-  rasterizace.
-- Šest nádrží, které atlas nekreslí (Fláje, Přísečnice, Hněvkovice, Římov,
-  Březová, Josefov Důl — doplňují seznam 26 nádrží odsouhlasený podle
-  dřívější mapy top-25), je umístěno ručně jako mini-plocha na správném
-  toku; Nové Mlýny kreslí atlas jako jednu slitou plochu, která se zde
-  dělí na Mušov / Věstonickou / Novomlýnskou zúžením (erozí rastru).
+  (Masarykova univerzita, PedF, J. Svobodova; is.muni.cz), vrstva: silueta
+  státu. Odtud pochází podklad mapy.
+- data/osm_rivers.json — 24 ptaných řek a říční síť na pozadí z exportu
+  vodstva ČR z OpenStreetMap (© přispěvatelé OpenStreetMap, licence ODbL;
+  HOT export hotosm_cze_waterways_osm_shp, snapshot 2026-11-03), promítnuté
+  do souřadnic atlasu. JSON generuje scripts/extract_osm.py ze shapefilu
+  v images/hotosm_cze_waterways_osm_shp/ (neverzionováno, viz kořenový
+  .gitignore); bez shapefilu ho nelze znovu vytvořit, proto je JSON uložený
+  v repozitáři.
 
-Ptáme se 10 řek (Vltava, Labe, Dyje, Ohře, Morava, Berounka, Sázava,
-Jihlava, Mže, Odra) a 26 nádrží dohromady; ostatní řeky atlasu se kreslí
-jen jako slabý kontext.
+Ptáme se 24 řek (Vltava, Labe, Morava, Ohře, Sázava, Dyje, Jihlava, Svratka,
+Jizera, Lužnice, Berounka, Odra, Otava, Opava, Radbuza, Chrudimka, Úhlava,
+Želivka, Mže, Svitava, Úpa, Olše, Bečva, Vlára).
 
-Výstup: window.WATER = { base, ctx, river[], res[] } ve viewBox 517 × ~367.
+Výstup: window.WATER = { base, ctx, river[] } ve viewBox 517 × ~367.
 Spuštění: python3 -I scripts/build_data.py
 """
 import json
@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "data", "07-vodstvo.svg")
+OSM_JSON = os.path.join(HERE, "..", "data", "osm_rivers.json")
 OUT = os.path.join(HERE, "..", "js", "data.js")
 
 NS = "{http://www.w3.org/2000/svg}"
@@ -178,7 +179,7 @@ def mul(m1, m2):
 
 
 tree = ET.parse(SRC)
-silhouette, rivers_raw, res_raw = [], [], []
+silhouette = []
 stack = [(1, 0, 0, 1, 0, 0)]
 
 
@@ -192,12 +193,8 @@ def walk(el, style):
     tag = el.tag.replace(NS, "")
     if tag == "path":
         d = el.get("d")
-        if st.get("stroke") == "#005ce6":
-            rivers_raw.append({"d": d, "m": m})
-        elif st.get("fill") == "#ffffbe":   # country fill (legend: pale yellow)
+        if st.get("fill") == "#ffffbe":   # country fill (legend: pale yellow)
             silhouette.append({"d": d, "m": m})
-        elif st.get("fill") == "#0070ff":
-            res_raw.append({"d": d, "m": m})
     stack.append(m)
     for ch in el:
         walk(ch, st)
@@ -213,233 +210,23 @@ def xf(polys, m):
 
 
 sil = [p for ps in silhouette for p in xf(flatten(ps["d"]), ps["m"])]
-# the atlas tiles the country into a dozen regional polygons with mixed
-# windings — their union is rasterized and re-contoured below (contour_ms)
+# silueta je jeden uzavřený tah; menší subpathy (ostrovy/exklávky) zahodíme
+print(f"atlas: {len(sil)} silhouette tiles")
 
-riv = []
-for r in rivers_raw:
-    for p in xf(flatten(r["d"]), r["m"]):
-        riv.append(p)
-res_sub = []
-for r in res_raw:
-    for p in xf(flatten(r["d"]), r["m"]):
-        res_sub.append(p)
-print(f"atlas: {len(sil)} silhouette tiles, {len(riv)} river polylines, "
-      f"{len(res_sub)} water subpaths")
-
-# ---- which polyline belongs to which asked river ---------------------------
-# (read off the atlas overlay: path index in `riv` order = document order)
-ASKED = {
-    "vltava": [1],       # path 1.0
-    "labe": [0],         # path 0.0
-    "ohre": [2],         # path 1.1
-    "berounka": [3],     # path 2.0
-    "mze": [4],          # path 2.1
-    "sazava": [20],      # path 6.1
-    "dyje": [26],        # path 8.1
-    "jihlava": [27],     # path 8.2
-    "morava": [29],      # path 9.1
-    "odra": [33, 31],    # paths 11.1 + 10.1
-}
-# verify the indices against bboxes so a re-download can't silently miswire
-# bboxes in the transformed (final) user units
-EXPECT = {
-    "vltava": (140.96, 164.92, 207.73, 379.78),
-    "labe": (165.46, 97.46, 319.06, 199.76),
-    "ohre": (27.16, 139.76, 175.56, 198.36),
-    "mze": (55.76, 232.36, 116.46, 241.26),
-    "berounka": (116.76, 201.86, 198.06, 237.96),
-    "sazava": (197.86, 219.16, 280.66, 244.66),
-    "jihlava": (280.66, 275.36, 387.66, 334.66),
-    "dyje": (312.06, 334.16, 415.06, 367.76),
-    "morava": (403.26, 211.96, 457.26, 368.26),
-    "odra": (449.66, 195.96, 508.46, 212.46),
-}
-
-
-def bbox(poly):
-    xs = [p[0] for p in poly]
-    ys = [p[1] for p in poly]
-    return (min(xs), min(ys), max(xs), max(ys))
-
-
-asked_polys = {}
-for code, idxs in ASKED.items():
-    polys = [riv[i] for i in idxs]
-    bb = bbox(polys[0])
-    ex = EXPECT[code]
-    assert all(abs(bb[k] - ex[k]) < 1.5 for k in range(4)), (code, bb, ex)
-    asked_polys[code] = polys
-ctx_polys = [p for i, p in enumerate(riv)
-             if not any(i in v for v in ASKED.values())]
-
-# ---- reservoirs -------------------------------------------------------------
-# the anchor/hand/label tables were read off an untransformed dump of the
-# same file: the outer <g translate(-7.84 -7.84)> is applied at use time
+# the label anchors below were read off an untransformed dump of the same
+# file: the outer <g translate(-7.84 -7.84)> is applied at use time
 TR = -7.84
-
-
-def sub_at(cx, cy, tol=1.0):
-    for i, p in enumerate(res_sub):
-        b = bbox(p)
-        if b[0] - tol <= cx <= b[2] + tol and b[1] - tol <= cy <= b[3] + tol:
-            return i
-    raise KeyError((cx, cy))
-
-
-RES_SRC = {   # code -> (subpath anchor point, name, extra accepts)
-    "lipno": ((185.6, 376.5), "Lipno", ["Lipno I"]),
-    "orlik": ((195.4, 289.9), "Orlík", []),
-    "slapy": ((204.9, 246.5), "Slapy", []),
-    "svihov": ((269.5, 251.5), "Švihov", ["Želivka"]),
-    "hnevkovice": (None, "Hněvkovice", []),
-    "rimov": (None, "Římov", []),
-    "vranov": ((322.7, 343.7), "Vranov", []),
-    # the atlas draws the whole Nové Mlýny cascade as one water body with
-    # one label — one quiz unit, with the three basin names accepted
-    "novemlyny": ((395.0, 344.4), "Nové Mlýny",
-                  ["Novomlýnská", "Věstonická", "Mušov",
-                   "Novomlýnská nádrž", "Věstonická nádrž",
-                   "Mušovská nádrž"]),
-    "dalesice": ((346.6, 311.6), "Dalešice", []),
-    "vir": ((361.6, 258.7), "Vír", []),
-    "sec": ((309.5, 230.4), "Seč", []),
-    "nechranice": ((123.0, 170.4), "Nechranice", []),
-    "flaje": (None, "Fláje", []),
-    "prisecnice": (None, "Přísečnice", []),
-    "jesenice": ((46.0, 209.2), "Jesenice", []),
-    "hracholusky": ((100.2, 243.4), "Hracholusky", []),
-    "brezova": (None, "Březová", []),
-    "rozkos": ((339.0, 159.3), "Rozkoš", []),
-    "slezska-harta": ((459.4, 210.1), "Slezská Harta", []),
-    "kruzberk": ((469.0, 217.6), "Kružberk", []),
-    "zermanice": ((540.6, 223.0), "Žermanice", []),
-    "terlicko": ((538.3, 227.8), "Terlicko", []),
-    "sance": ((538.2, 256.4), "Šance", []),
-    "josefov-dul": (None, "Josefov Důl", ["Josefův Důl"]),
-}
-# hand-placed mini shapes for reservoirs the atlas does not draw
-# (position on the right stream, checked against the reveal screenshot)
-HAND = {
-    "flaje": (149.0, 121.0), "prisecnice": (139.0, 127.0),
-    "hnevkovice": (197.5, 261.5), "rimov": (210.5, 333.0),
-    "brezova": (76.0, 177.0), "josefov-dul": (233.5, 88.0),
-}
-
-
-def mini_blob(cx, cy):
-    rx, ry = 2.2, 1.3
-    return [(cx + rx*math.cos(t), cy + ry*math.sin(t))
-            for t in [i*math.pi/4 for i in range(8)]]
-
-
-def contour_ms(mask, w, h):
-    """Marching squares: boundary of a solid mask as an ordered loop."""
-    def add(p, q):
-        i = len(segs)
-        segs.append((p, q))
-        idx.setdefault(p, []).append(i)
-        idx.setdefault(q, []).append(i)
-
-    segs, idx = [], {}
-    for y in range(h - 1):
-        row = y * w
-        for x in range(w - 1):
-            c = ((mask[row + x] << 3) | (mask[row + x + 1] << 2)
-                 | (mask[row + w + x] << 1) | mask[row + w + x + 1])
-            if c in (0, 15):
-                continue
-            T, R = (x + .5, y), (x + 1, y + .5)
-            B, L = (x + .5, y + 1), (x, y + .5)
-            if c in (1, 14):
-                add(R, B)
-            elif c in (2, 13):
-                add(L, B)
-            elif c in (3, 12):
-                add(L, R)
-            elif c in (4, 11):
-                add(T, R)
-            elif c in (5, 10):
-                add(T, B)
-            elif c in (7, 8):
-                add(L, T)
-            elif c == 6:
-                add(L, T)
-                add(R, B)
-            elif c == 9:
-                add(T, R)
-                add(L, B)
-    used = [False] * len(segs)
-    loops = []
-    for i0 in range(len(segs)):
-        if used[i0]:
-            continue
-        used[i0] = True
-        p, q = segs[i0]
-        path, cur, prev = [p, q], q, p
-        while True:
-            # ve zúženinách se potkávají čtyři konce úseček: pokračuj rovně
-            bestj, bs, bo = None, -1e9, None
-            for j in idx.get(cur, ()):
-                if used[j]:
-                    continue
-                a, b = segs[j]
-                o = b if a == cur else a
-                s = ((o[0] - cur[0]) * (cur[0] - prev[0])
-                     + (o[1] - cur[1]) * (cur[1] - prev[1]))
-                if s > bs:
-                    bestj, bs, bo = j, s, o
-            if bestj is None:
-                break
-            used[bestj] = True
-            prev, cur = cur, bo
-            path.append(cur)
-            if cur == path[0]:
-                break
-        loops.append(path)
-    opens = [p for p in loops if p[0] != p[-1]]
-    closed = [p for p in loops if p[0] == p[-1]]
-    while opens:
-        P = opens.pop(0)
-        if not opens:
-            closed.append(P)
-            break
-        best = (math.dist(P[0], P[-1]), -1, 0, 0)
-        for i, Q in enumerate(opens):
-            for pe in (0, -1):
-                for qe in (0, -1):
-                    d = math.dist(P[pe], Q[qe])
-                    if d < best[0]:
-                        best = (d, i, pe, qe)
-        d, i, pe, qe = best
-        if i < 0:
-            closed.append(P)
-            continue
-        Q = opens.pop(i)
-        if pe == 0:
-            P = P[::-1]
-        Q = Q if qe == 0 else Q[::-1]
-        opens.append(P + Q[1:])
-    return max(closed, key=len)
 
 
 # ---- country silhouette -----------------------------------------------------
 sil.sort(key=lambda p: -len(p))
-country = path_closed_i(simplify_closed(sil[0] + [sil[0][0]], 0.4))
 print("country ring pts:", len(sil[0]))
-
-res_polys = {}
-for code, (anchor, name, extra) in RES_SRC.items():
-    if code in HAND:
-        res_polys[code] = [mini_blob(HAND[code][0] + TR, HAND[code][1] + TR)]
-    else:
-        i = sub_at(anchor[0] + TR, anchor[1] + TR)
-        res_polys[code] = [simplify_closed(res_sub[i] + [res_sub[i][0]], 0.25)]
 
 # ---- emit -------------------------------------------------------------------
 VB_W = 517.2
 K = VB_W / 577.62243
 VB_H = round(409.85852 * K, 1)
+country = simplify_closed(sil[0] + [sil[0][0]], 0.4)
 
 
 def sc(pts):
@@ -454,58 +241,92 @@ def path_closed(pts):
     return path_open(pts) + " Z"
 
 
-RIVER_NAMES = {"vltava": "Vltava", "labe": "Labe", "dyje": "Dyje",
-               "ohre": "Ohře", "morava": "Morava", "berounka": "Berounka",
-               "sazava": "Sázava", "jihlava": "Jihlava", "mze": "Mže",
-               "odra": "Odra"}
+def fmt_vb(pts):
+    """cesta z bodů, které UŽ jsou ve viewBox (data z OSM)"""
+    return "M " + " L ".join(f"{x:g} {y:g}" for x, y in pts)
+
+
 # label anchors in atlas units (tuned against the reveal-all screenshot)
 LABELS = {
     "vltava": (186, 292), "labe": (248, 172), "dyje": (348, 357),
     "ohre": (84, 150), "morava": (430, 272), "berounka": (152, 224),
     "sazava": (240, 231), "jihlava": (330, 296), "mze": (68, 236),
     "odra": (497, 198),
-    "lipno": (178, 372), "orlik": (181, 272), "slapy": (212, 243),
-    "svihov": (262, 246), "hnevkovice": (204, 262), "rimov": (216, 336),
-    "vranov": (314, 340), "novemlyny": (399, 352), "dalesice": (338, 306),
-    "vir": (349, 253), "sec": (303, 224), "nechranice": (116, 163),
-    "flaje": (149, 116), "prisecnice": (136, 124), "jesenice": (42, 205),
-    "hracholusky": (93, 243), "brezova": (78, 172), "rozkos": (332, 150),
-    "slezska-harta": (447, 196), "kruzberk": (462, 213),
-    "zermanice": (533, 219), "terlicko": (545, 227),
-    "sance": (533, 253), "josefov-dul": (238, 84),
 }
+# ruční přepsání automaticky umístěných popisků nových řek (viewBox jednotky)
+LABELS_VB = {}
 
+
+# ---- rivers from the OSM extraction ------------------------------------------
+osm = json.load(open(OSM_JSON, encoding="utf-8"))
+assert osm["meta"]["viewbox"] == [VB_W, VB_H], "osm_rivers.json má jiný viewBox"
+
+
+def chain_len(ch):
+    return sum(math.dist(a, b) for a, b in zip(ch, ch[1:]))
+
+
+def point_at(ch, t):
+    """bod v části t délky + jednotková normála (proti směru toku doprava)"""
+    L = chain_len(ch)
+    target = t * L
+    acc = 0.0
+    for a, b in zip(ch, ch[1:]):
+        d = math.dist(a, b)
+        if acc + d >= target and d > 1e-9:
+            f = (target - acc) / d
+            p = (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+            n = ((b[1] - a[1]) / d, -(b[0] - a[0]) / d)
+            return p, n
+        acc += d
+    a, b = ch[-2], ch[-1]
+    d = math.dist(a, b) or 1e-9
+    return ch[-1], ((b[1] - a[1]) / d, -(b[0] - a[0]) / d)
+
+
+def auto_label(chains, taken):
+    """kotva popisku: vedle nejdelšího řetězce, na straně dál od ostatních"""
+    dom = max(chains, key=chain_len)
+    best = None
+    for t in (0.4, 0.55, 0.3, 0.7, 0.2):
+        p, n = point_at(dom, t)
+        for side in (1, -1):
+            c = (p[0] + side * 7.0 * n[0], p[1] + side * 7.0 * n[1])
+            s = min((math.dist(c, q) for q in taken), default=99.0)
+            if best is None or s > best[0]:
+                best = (s, c)
+    return (round(best[1][0], 1), round(best[1][1], 1))
+
+
+taken = [(((x + TR) * K), ((y + TR) * K)) for x, y in LABELS.values()]
 recs_river = []
-for code in sorted(ASKED, key=lambda c: RIVER_NAMES[c]):
-    name = RIVER_NAMES[code]
-    polys = [rdp(p, 0.15) for p in asked_polys[code]]
+for r in sorted(osm["rivers"], key=lambda r: r["name"]):
+    code = r["code"]
+    name = r["name"]
+    if code in LABELS:
+        cx = round((LABELS[code][0] + TR) * K, 1)
+        cy = round((LABELS[code][1] + TR) * K, 1)
+    elif code in LABELS_VB:
+        cx, cy = LABELS_VB[code]
+    else:
+        cx, cy = auto_label(r["chains"], taken)
+        taken.append((cx, cy))
     recs_river.append({
         "code": code, "name": name, "alt": "řeka " + name,
         "accept": [name, "řeka " + name], "cat": "řeka",
-        "path": " ".join(path_open(p) for p in polys),
-        "cx": round((LABELS[code][0] + TR) * K, 1),
-        "cy": round((LABELS[code][1] + TR) * K, 1),
+        "path": " ".join(fmt_vb(ch) for ch in r["chains"]),
+        "cx": cx, "cy": cy,
     })
-recs_res = []
-for code, (anchor, name, extra) in sorted(RES_SRC.items(), key=lambda kv: kv[1][1]):
-    acc = [name, "VN " + name, "vodní nádrž " + name] + extra
-    recs_res.append({
-        "code": code, "name": name, "alt": "VN " + name,
-        "accept": acc, "cat": "vodní nádrž",
-        "path": " ".join(path_closed(p) for p in res_polys[code]),
-        "cx": round((LABELS[code][0] + TR) * K, 1),
-        "cy": round((LABELS[code][1] + TR) * K, 1),
-    })
-ctx = [rdp(p, 0.3) for p in ctx_polys if len(p) >= 4]
-data = {"base": country,
-        "ctx": " ".join(path_open(p) for p in ctx),
-        "river": recs_river, "res": recs_res}
+data = {"base": path_closed(country),
+        "ctx": " ".join(fmt_vb(ch) for ch in osm["ctx"]),
+        "river": recs_river}
 js = ("// Auto-generated by scripts/build_data.py — do not edit by hand.\n"
-      "// Source: data/07-vodstvo.svg (Česká republika – tematický atlas,\n"
-      "//         Masarykova univerzita; river/reservoir geometry as drawn\n"
-      "//         there), plus six hand-placed reservoirs the atlas omits.\n"
+      "// Sources: data/07-vodstvo.svg (Česká republika – tematický atlas,\n"
+      "//          Masarykova univerzita — silhouette) and\n"
+      "//          data/osm_rivers.json (rivers; © OpenStreetMap contributors,\n"
+      "//          ODbL — HOT OSM waterways export, see scripts/extract_osm.py).\n"
       f'window.WATER_VIEWBOX = "0 0 {VB_W} {VB_H}";\n'
       f"window.WATER = {json.dumps(data, ensure_ascii=False)};\n")
 open(OUT, "w", encoding="utf-8").write(js)
-print(f"wrote {OUT}: {len(recs_river)} rivers, {len(recs_res)} reservoirs, "
-      f"{len(ctx)} context lines, {os.path.getsize(OUT)} bytes")
+print(f"wrote {OUT}: {len(recs_river)} rivers, "
+      f"{len(osm['ctx'])} context lines, {os.path.getsize(OUT)} bytes")

@@ -17,37 +17,36 @@
 //               ("soustava") may be omitted (see normalize.js).
 //
 // Data comes from js/data.js (window.GEOMORPH, window.GEOMORPH_VIEWBOX).
+// Text comes from the language layer (../i18n/core.js + ../i18n/common.js +
+// js/i18n.js): the hub page picks the language and passes it as ?lang=…, and
+// unit names stay Czech in every language. Every level keeps its own set of
+// grammatical forms there, because the prompts inflect the level word.
 (function () {
   "use strict";
 
   var G = window.GEOMORPH || { provincie: [], soustavy: [], podsoustavy: [] };
   var VIEWBOX = window.GEOMORPH_VIEWBOX || "0 0 1640 935";
   var N = window.GeomorphNormalize;
+  var I18N = window.GeoI18N;
+  var tr = I18N.t;
   var MAX_QUIZ = 10;
 
+  // Language-neutral level config only; the wording each level needs lives in
+  // js/i18n.js under level.<key>.* (clickTarget, typeTarget, placeholder, hint).
   var LEVELS = {
     provincie: {
       units: G.provincie || [],
-      acc: "provincii",        // "Klikni na …"
-      gen: "provincie",        // "Napiš název zvýrazněné …"
       hintable: false,
-      hintWord: "",
       cls: "prov",
     },
     soustavy: {
       units: G.soustavy || [],
-      acc: "soustavu",
-      gen: "soustavy",
       hintable: true,
-      hintWord: "provincie",
       cls: "soust",
     },
     podsoustavy: {
       units: G.podsoustavy || [],
-      acc: "podsoustavu",
-      gen: "podsoustavy",
       hintable: true,
-      hintWord: "soustava",
       cls: "pod",
     },
   };
@@ -91,10 +90,10 @@
     if (u.accept && u.accept.length) return u.accept;
     return u.alt ? [u.name, u.alt] : [u.name];
   }
-  // Czech plural for the province-level tooltip.
+  // Province-level tooltip: how many soustavy the province is made of. The
+  // plural forms are per-language (see app.plural.subs in js/i18n.js).
   function subsText(n) {
-    var word = n === 1 ? "soustava" : (n < 5 ? "soustavy" : "soustav");
-    return n + " " + word;
+    return I18N.plural("app.plural.subs", n);
   }
   // Secondary info shown in tooltips/status after " · ".
   function infoLine(u) {
@@ -247,12 +246,13 @@
     if (u.code === target.code) {
       score++;
       flash(target.code, "good");
-      setStatus("Správně! " + displayName(target));
+      setStatus(tr("app.status.correct", { name: displayName(target) }));
     } else {
       flash(u.code, "bad");
       flash(target.code, "good");
-      setStatus("Nesprávně. Hledali jsme: " + displayName(target) +
-                " · " + infoLine(target));
+      setStatus(tr("app.status.wrongClick", {
+        name: displayName(target), info: " · " + infoLine(target),
+      }));
     }
     updateScore();
     setTimeout(nextRound, 1100);
@@ -320,12 +320,12 @@
     elHintParent.style.display =
       (mode === "click" && L().hintable) ? "" : "none";
     var hintWhat = document.getElementById("hint-what");
-    if (hintWhat) hintWhat.textContent = L().hintWord;
+    if (hintWhat) hintWhat.textContent = tr("level." + level + ".hint");
     elInputWrap.style.display = (mode === "type") ? "" : "none";
     elActions.style.display = "none";
     elRevealWrap.style.display = "none";
     if (mode === "type" && elInput) {
-      elInput.placeholder = "Napiš název " + L().gen + "…";
+      elInput.placeholder = tr("level." + level + ".placeholder");
       elInput.value = "";
       elInput.focus();
     }
@@ -340,8 +340,9 @@
     if (L().hintable && elHintParent.querySelector("input").checked) {
       hint = " <small>(" + target.parent + ")</small>";
     }
-    elPrompt.innerHTML = "Klikni na " + L().acc + ":<br><b>" +
-      displayName(target) + "</b>" + hint;
+    elPrompt.innerHTML = tr("app.prompt.click", {
+      "noun.clickTarget": tr("level." + level + ".clickTarget"),
+    }) + "<br><b>" + displayName(target) + "</b>" + hint;
   }
 
   function nextRound() {
@@ -360,7 +361,9 @@
       if (elInput) elInput.blur();
     } else if (mode === "type") {
       flash(target.code, "ask");
-      elPrompt.innerHTML = "Napiš název zvýrazněné " + L().gen + ":";
+      elPrompt.innerHTML = tr("app.prompt.type", {
+        "noun.typeTarget": tr("level." + level + ".typeTarget"),
+      });
       setStatus("");
       if (elInput) elInput.focus();
     }
@@ -376,11 +379,13 @@
     var isBest = score > best;
     if (isBest) saveBest(score);
     var bestNow = Math.max(best, score);
-    elPrompt.innerHTML =
-      "Konec kvízu!<br><b>" + score + " / " + len +
-      "</b> (" + pct + " %)";
-    setStatus("Nejlepší výsledek: " + bestNow + " / " + len +
-              (isBest ? " — nový rekord!" : ""));
+    elPrompt.innerHTML = tr("app.prompt.finish",
+                            { score: score, len: len, pct: pct });
+    setStatus(tr("app.status.best", {
+      score: bestNow,
+      len: len,
+      record: isBest ? tr("app.status.record") : "",
+    }));
     elInputWrap.style.display = "none";
     elActions.style.display = "";
     elProgress.textContent = len + " / " + len;
@@ -397,17 +402,19 @@
       score++;
       flash(target.code, "good");
       elInputWrap.classList.add("good");
-      setStatus("Správně! " + displayName(target));
+      setStatus(tr("app.status.correct", { name: displayName(target) }));
     } else if (N.isClose(typed, names)) {
       flash(target.code, "bad");
       elInputWrap.classList.add("close");
-      setStatus("Téměř. Správně: " + displayName(target) +
-                " · " + infoLine(target));
+      setStatus(tr("app.status.almost", {
+        name: displayName(target), info: " · " + infoLine(target),
+      }));
     } else {
       flash(target.code, "bad");
       elInputWrap.classList.add("bad");
-      setStatus("Nesprávně. Správně: " + displayName(target) +
-                " · " + infoLine(target));
+      setStatus(tr("app.status.wrongType", {
+        name: displayName(target), info: " · " + infoLine(target),
+      }));
     }
     updateScore();
     setTimeout(nextRound, 1300);
@@ -418,8 +425,9 @@
     locked = true;
     flash(target.code, "bad");
     elInputWrap.classList.add("bad");
-    setStatus("Správně bylo: " + displayName(target) +
-              " · " + infoLine(target));
+    setStatus(tr("app.status.skipped", {
+      name: displayName(target), info: " · " + infoLine(target),
+    }));
     updateScore();
     setTimeout(nextRound, 1300);
   }
@@ -440,10 +448,9 @@
     clearAllFlash();
     hideTooltip();
     target = null;
-    elPrompt.innerHTML = "Prozkoumávání";
-    setStatus("Najedni myší na území a podívej se na jeho název a " +
-              (level === "provincie" ? "počet soustav."
-                                     : "nadřazenou jednotku."));
+    elPrompt.innerHTML = tr("app.prompt.explore");
+    setStatus(tr(level === "provincie" ? "app.status.exploreSubs"
+                                       : "app.status.exploreParent"));
     elInputWrap.style.display = "none";
     elActions.style.display = "none";
     elHintParent.style.display = "none";

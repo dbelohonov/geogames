@@ -9,11 +9,11 @@
   </head>
   <body>
     <header class="topbar">
-      <h1>🗺️ Okresy v&nbsp;Česku</h1>
+      <h1 data-i18n="app.h1">🗺️ Okresy v&nbsp;Česku</h1>
       <nav class="modes">
-        <button data-mode="explore" class="active">Prozkoumat</button>
-        <button data-mode="click">Klikací kvíz</button>
-        <button data-mode="type">Psaný kvíz</button>
+        <button data-mode="explore" class="active" data-i18n="app.mode.explore">Prozkoumat</button>
+        <button data-mode="click" data-i18n="app.mode.click">Klikací kvíz</button>
+        <button data-mode="type" data-i18n="app.mode.type">Psaný kvíz</button>
       </nav>
     </header>
 
@@ -25,35 +25,37 @@
         <div class="input-row" id="input-wrap" style="display:none">
           <input id="answer-input" type="text" autocomplete="off"
                  autocapitalize="off" spellcheck="false"
+                 data-i18n-placeholder="app.input.placeholder"
                  placeholder="Napiš název okresu…">
-          <button id="btn-submit" type="button">OK</button>
-          <button id="btn-skip" type="button" class="ghost">Přeskočit</button>
+          <button id="btn-submit" type="button" data-i18n="app.btn.ok">OK</button>
+          <button id="btn-skip" type="button" class="ghost" data-i18n="app.btn.skip">Přeskočit</button>
         </div>
 
         <div class="stats">
-          <div><span>Otázka</span><b id="progress">—</b></div>
-          <div><span>Skóre</span><b id="score">—</b></div>
+          <div><span data-i18n="app.stats.question">Otázka</span><b id="progress">—</b></div>
+          <div><span data-i18n="app.stats.score">Skóre</span><b id="score">—</b></div>
         </div>
 
         <div class="hint" id="hint-kraj" style="display:none">
-          <label><input type="checkbox"> nápověda: kraj</label>
+          <label><input type="checkbox"> <span data-i18n="app.hint.kraj">nápověda: kraj</span></label>
         </div>
 
         <div class="legend" id="legend">
-          <p><span class="sw good"></span> správně / hledaný okres</p>
-          <p><span class="sw bad"></span> nesprávně</p>
-          <p><span class="sw ask"></span> zvýrazněný okres (psaný kvíz)</p>
+          <p><span class="sw good"></span> <span data-i18n="app.legend.correct">správně / hledaný okres</span></p>
+          <p><span class="sw bad"></span> <span data-i18n="app.legend.wrong">nesprávně</span></p>
+          <p><span class="sw ask"></span> <span data-i18n="app.legend.highlighted">zvýrazněný okres (psaný kvíz)</span></p>
           <div class="reveal-wrap" id="reveal-wrap">
-            <label class="reveal"><input type="checkbox" id="reveal-all"> ukázat všechny názvy</label>
+            <label class="reveal"><input type="checkbox" id="reveal-all"> <span data-i18n="app.legend.reveal">ukázat všechny názvy</span></label>
           </div>
         </div>
 
         <div class="actions" id="actions" style="display:none">
-          <button data-restart="click">Hrát znovu (klikací)</button>
-          <button data-restart="type">Hrát znovu (psaný)</button>
+          <button data-restart="click" data-i18n="app.action.restartClick">Hrát znovu (klikací)</button>
+          <button data-restart="type" data-i18n="app.action.restartType">Hrát znovu (psaný)</button>
         </div>
 
-        <a class="refmap" href="../images/Okresy_CR.png" target="_blank" rel="noopener">📷 Referenční mapa s&nbsp;názvy (Wikipedia)</a>
+        <a class="refmap" href="../images/Okresy_CR.png" target="_blank" rel="noopener"
+           data-i18n="app.refmap">📷 Referenční mapa s&nbsp;názvy (Wikipedia)</a>
       </aside>
 
       <section class="mapwrap">
@@ -63,10 +65,14 @@
     </main>
 
     <footer class="foot">
-      <p>Zdroj hranic: <a href="https://github.com/padytest/geojson-okresy" target="_blank" rel="noopener">padytest/geojson-okresy</a>
-         · 77 okresů ČR. Data generována přes <code>scripts/build_data.py</code>.</p>
+      <p><span data-i18n="foot.source">Zdroj hranic:</span> <a href="https://github.com/padytest/geojson-okresy" target="_blank" rel="noopener">padytest/geojson-okresy</a>
+         · <span data-i18n="foot.count">77 okresů ČR. Data generována přes</span> <code>scripts/build_data.py</code>.</p>
     </footer>
 
+    <!-- language layer: core + shared strings + this game's strings -->
+    <script src="../i18n/core.js"></script>
+    <script src="../i18n/common.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/data.js"></script>
     <script src="js/normalize.js"></script>
     <script src="js/game.js"></script>

@@ -20,7 +20,7 @@
     <main class="layout">
       <aside class="panel" id="panel">
         <div class="prompt" id="prompt">Prozkoumávání</div>
-        <div class="status" id="status">Najedni myší na řeku nebo nádrž a podívej se na její název.</div>
+        <div class="status" id="status">Najedni myší na řeku a podívej se na její název.</div>
 
         <div class="input-row" id="input-wrap" style="display:none">
           <input id="answer-input" type="text" autocomplete="off"
@@ -37,7 +37,6 @@
 
         <div class="legend" id="legend">
           <p><span class="sw river"></span> řeka</p>
-          <p><span class="sw res"></span> vodní nádrž</p>
           <p><span class="sw good"></span> správně / hledané území</p>
           <p><span class="sw bad"></span> nesprávně</p>
           <p><span class="sw ask"></span> zvýrazněné území (psaný kvíz)</p>
@@ -50,8 +49,6 @@
           <button data-restart="click">Hrát znovu (klikací)</button>
           <button data-restart="type">Hrát znovu (psaný)</button>
         </div>
-
-        <a class="refmap" href="../images/Czech_reservoirs_%E2%80%93_top_25.png" target="_blank" rel="noopener">📷 Referenční mapa s&nbsp;názvy (vodstvo ČR)</a>
       </aside>
 
       <section class="mapwrap">
@@ -62,8 +59,8 @@
 
     <footer class="foot">
       <p>Zdroj mapy: <code>data/07-vodstvo.svg</code> — Vodstvo, Česká republika – tematický atlas
-         (Masarykova univerzita, PedF). Ptáme se 10 řek a 24 vodních ploch; šest nádrží, které atlas
-         nekreslí, je umístěno ručně, soustava Nové Mlýny hraje jako jedno území.
+         (Masarykova univerzita, PedF; silueta státu). Řeky a říční síť na pozadí pocházejí
+         z OpenStreetMap (© přispěvatelé OSM, ODbL). Ptáme se 24 řek.
          Data generována přes <code>scripts/build_data.py</code>.</p>
     </footer>
 

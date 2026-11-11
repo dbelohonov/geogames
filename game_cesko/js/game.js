@@ -9,12 +9,16 @@
 //               normalize.js).
 //
 // Data comes from js/data.js (window.OKRESY, window.OKRESY_VIEWBOX).
+// Text comes from the language layer (../i18n/core.js + ../i18n/common.js +
+// js/i18n.js): the hub page picks the language and passes it as ?lang=…, and
+// district names stay Czech in every language.
 (function () {
   "use strict";
 
   var OKRESY = window.OKRESY || [];
   var VIEWBOX = window.OKRESY_VIEWBOX || "0 0 961 551";
   var N = window.OkresyNormalize;
+  var tr = window.GeoI18N.t;
   var QUIZ_LEN = 10;
 
   // Lookup by code for O(1) hit-testing feedback.
@@ -141,12 +145,12 @@
     if (o.code === target.code) {
       score++;
       flash(target.code, "good");
-      setStatus("Správně! " + target.name);
+      setStatus(tr("app.status.correct", { name: target.name }));
     } else {
       flash(o.code, "bad");
       flash(target.code, "good");
-      setStatus("Nesprávně. Hledali jste: " + target.name +
-                " · " + target.kraj);
+      setStatus(tr("app.status.wrongClick",
+                   { name: target.name, info: " · " + target.kraj }));
     }
     updateScore();
     setTimeout(nextRound, 1100);
@@ -224,7 +228,8 @@
     if (!target) return;
     var hint = elHintKraj.querySelector("input").checked
       ? " <small>(" + target.kraj + ")</small>" : "";
-    elPrompt.innerHTML = "Klikni na okres:<br><b>" + target.name + "</b>" + hint;
+    elPrompt.innerHTML = tr("app.prompt.click") +
+                         "<br><b>" + target.name + "</b>" + hint;
   }
 
   function nextRound() {
@@ -243,7 +248,7 @@
       if (elInput) elInput.blur();
     } else if (mode === "type") {
       flash(target.code, "ask");
-      elPrompt.innerHTML = "Napiš název zvýrazněného okresu:";
+      elPrompt.innerHTML = tr("app.prompt.type");
       setStatus("");
       if (elInput) elInput.focus();
     }
@@ -258,11 +263,13 @@
     var isBest = score > best;
     if (isBest) saveBest(mode, score);
     var bestNow = Math.max(best, score);
-    elPrompt.innerHTML =
-      "Konec kvízu!<br><b>" + score + " / " + QUIZ_LEN +
-      "</b> (" + pct + " %)";
-    setStatus("Nejlepší výsledek: " + bestNow + " / " + QUIZ_LEN +
-              (isBest ? " — nový rekord!" : ""));
+    elPrompt.innerHTML = tr("app.prompt.finish",
+                            { score: score, len: QUIZ_LEN, pct: pct });
+    setStatus(tr("app.status.best", {
+      score: bestNow,
+      len: QUIZ_LEN,
+      record: isBest ? tr("app.status.record") : "",
+    }));
     elInputWrap.style.display = "none";
     elActions.style.display = "";
     elProgress.textContent = QUIZ_LEN + " / " + QUIZ_LEN;
@@ -278,17 +285,17 @@
       score++;
       flash(target.code, "good");
       elInputWrap.classList.add("good");
-      setStatus("Správně! " + target.name);
+      setStatus(tr("app.status.correct", { name: target.name }));
     } else if (N.isClose(typed, target.name)) {
       flash(target.code, "bad");
       elInputWrap.classList.add("close");
-      setStatus("Téměř. Správně: " + target.name +
-                " · " + target.kraj);
+      setStatus(tr("app.status.almost",
+                   { name: target.name, info: " · " + target.kraj }));
     } else {
       flash(target.code, "bad");
       elInputWrap.classList.add("bad");
-      setStatus("Nesprávně. Správně: " + target.name +
-                " · " + target.kraj);
+      setStatus(tr("app.status.wrongType",
+                   { name: target.name, info: " · " + target.kraj }));
     }
     updateScore();
     setTimeout(nextRound, 1300);
@@ -299,7 +306,8 @@
     locked = true;
     flash(target.code, "bad");
     elInputWrap.classList.add("bad");
-    setStatus("Správně bylo: " + target.name + " · " + target.kraj);
+    setStatus(tr("app.status.skipped",
+                 { name: target.name, info: " · " + target.kraj }));
     updateScore();
     setTimeout(nextRound, 1300);
   }
@@ -319,8 +327,8 @@
     mode = "explore";
     clearAllFlash();
     target = null;
-    elPrompt.innerHTML = "Prozkoumávání";
-    setStatus("Najedni myší na okres a podívej se na jeho název a kraj.");
+    elPrompt.innerHTML = tr("app.prompt.explore");
+    setStatus(tr("app.status.explore"));
     elInputWrap.style.display = "none";
     elActions.style.display = "none";
     elHintKraj.style.display = "none";

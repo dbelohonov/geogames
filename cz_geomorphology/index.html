@@ -9,16 +9,16 @@
   </head>
   <body>
     <header class="topbar">
-      <h1>⛰️ Geomorfologie Česka</h1>
+      <h1 data-i18n="app.h1">⛰️ Geomorfologie Česka</h1>
       <nav class="modes">
-        <button data-mode="explore" class="active">Prozkoumat</button>
-        <button data-mode="click">Klikací kvíz</button>
-        <button data-mode="type">Psaný kvíz</button>
+        <button data-mode="explore" class="active" data-i18n="app.mode.explore">Prozkoumat</button>
+        <button data-mode="click" data-i18n="app.mode.click">Klikací kvíz</button>
+        <button data-mode="type" data-i18n="app.mode.type">Psaný kvíz</button>
       </nav>
-      <nav class="levels" title="Úroveň geomorfologického členění">
-        <button data-level="provincie">Provincie</button>
-        <button data-level="soustavy" class="active">Soustavy</button>
-        <button data-level="podsoustavy">Podsoustavy</button>
+      <nav class="levels" data-i18n-title="app.levels.title" title="Úroveň geomorfologického členění">
+        <button data-level="provincie" data-i18n="level.provincie.name">Provincie</button>
+        <button data-level="soustavy" class="active" data-i18n="level.soustavy.name">Soustavy</button>
+        <button data-level="podsoustavy" data-i18n="level.podsoustavy.name">Podsoustavy</button>
       </nav>
     </header>
 
@@ -30,35 +30,37 @@
         <div class="input-row" id="input-wrap" style="display:none">
           <input id="answer-input" type="text" autocomplete="off"
                  autocapitalize="off" spellcheck="false"
+                 data-i18n-placeholder="level.soustavy.placeholder"
                  placeholder="Napiš název soustavy…">
-          <button id="btn-submit" type="button">OK</button>
-          <button id="btn-skip" type="button" class="ghost">Přeskočit</button>
+          <button id="btn-submit" type="button" data-i18n="app.btn.ok">OK</button>
+          <button id="btn-skip" type="button" class="ghost" data-i18n="app.btn.skip">Přeskočit</button>
         </div>
 
         <div class="stats">
-          <div><span>Otázka</span><b id="progress">—</b></div>
-          <div><span>Skóre</span><b id="score">—</b></div>
+          <div><span data-i18n="app.stats.question">Otázka</span><b id="progress">—</b></div>
+          <div><span data-i18n="app.stats.score">Skóre</span><b id="score">—</b></div>
         </div>
 
         <div class="hint" id="hint-parent" style="display:none">
-          <label><input type="checkbox"> nápověda: <span id="hint-what">provincie</span></label>
+          <label><input type="checkbox"> <span data-i18n="app.hint.label">nápověda:</span> <span id="hint-what">provincie</span></label>
         </div>
 
         <div class="legend" id="legend">
-          <p><span class="sw good"></span> správně / hledaný útvar</p>
-          <p><span class="sw bad"></span> nesprávně</p>
-          <p><span class="sw ask"></span> zvýrazněný útvar (psaný kvíz)</p>
+          <p><span class="sw good"></span> <span data-i18n="app.legend.correct">správně / hledaný útvar</span></p>
+          <p><span class="sw bad"></span> <span data-i18n="app.legend.wrong">nesprávně</span></p>
+          <p><span class="sw ask"></span> <span data-i18n="app.legend.highlighted">zvýrazněný útvar (psaný kvíz)</span></p>
           <div class="reveal-wrap" id="reveal-wrap">
-            <label class="reveal"><input type="checkbox" id="reveal-all"> ukázat všechny názvy</label>
+            <label class="reveal"><input type="checkbox" id="reveal-all"> <span data-i18n="app.legend.reveal">ukázat všechny názvy</span></label>
           </div>
         </div>
 
         <div class="actions" id="actions" style="display:none">
-          <button data-restart="click">Hrát znovu (klikací)</button>
-          <button data-restart="type">Hrát znovu (psaný)</button>
+          <button data-restart="click" data-i18n="app.action.restartClick">Hrát znovu (klikací)</button>
+          <button data-restart="type" data-i18n="app.action.restartType">Hrát znovu (psaný)</button>
         </div>
 
-        <a class="refmap" href="../images/Geomorfologie_CR.jpg" target="_blank" rel="noopener">📷 Referenční mapa s&nbsp;názvy (atlas MU)</a>
+        <a class="refmap" href="../images/Geomorfologie_CR.jpg" target="_blank" rel="noopener"
+           data-i18n="app.refmap">📷 Referenční mapa s&nbsp;názvy (atlas MU)</a>
       </aside>
 
       <section class="mapwrap">
@@ -68,11 +70,15 @@
     </main>
 
     <footer class="foot">
-      <p>Zdroj mapy: <a href="https://is.muni.cz/do/rect/el/estud/pedf/js17/cesko_atlas/web/pages/02-geomorfologie.html" target="_blank" rel="noopener">Česká republika – Tematický atlas</a>,
-         Pedagogická fakulta Masarykovy univerzity (© 2017 Masarykova univerzita)
-         · 4 provincie, 10 soustav a 27 podsoustav. Data generována přes <code>scripts/build_data.py</code>.</p>
+      <p><span data-i18n="foot.source">Zdroj mapy:</span> <a href="https://is.muni.cz/do/rect/el/estud/pedf/js17/cesko_atlas/web/pages/02-geomorfologie.html" target="_blank" rel="noopener" data-i18n="foot.atlas">Česká republika – Tematický atlas</a>,
+         <span data-i18n="foot.by">Pedagogická fakulta Masarykovy univerzity (© 2017 Masarykova univerzita)</span>
+         · <span data-i18n="foot.count">4 provincie, 10 soustav a 27 podsoustav. Data generována přes</span> <code>scripts/build_data.py</code>.</p>
     </footer>
 
+    <!-- language layer: core + shared strings + this game's strings -->
+    <script src="../i18n/core.js"></script>
+    <script src="../i18n/common.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/data.js"></script>
     <script src="js/normalize.js"></script>
     <script src="js/game.js"></script>
